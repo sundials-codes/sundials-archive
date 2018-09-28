@@ -1,9 +1,19 @@
 !-----------------------------------------------------------------
 ! Programmer(s): Daniel R. Reynolds @ SMU
 !-----------------------------------------------------------------
-! Copyright (c) 2016, Southern Methodist University.
+! LLNS/SMU Copyright Start
+! Copyright (c) 2015, Southern Methodist University and 
+! Lawrence Livermore National Security
+!
+! This work was performed under the auspices of the U.S. Department 
+! of Energy by Southern Methodist University and Lawrence Livermore 
+! National Laboratory under Contract DE-AC52-07NA27344.
+! Produced at Southern Methodist University and the Lawrence 
+! Livermore National Laboratory.
+!
 ! All rights reserved.
 ! For details, see the LICENSE file.
+! LLNS/SMU Copyright End
 !-----------------------------------------------------------------
 ! Example problem:
 ! 
@@ -175,7 +185,7 @@ program driver
   real(kind=REALTYPE) :: rtol, atol, rout(6), Tout, Tcur
   real*8    :: dTout, pi, h, z
   integer   :: i, it, Nt, ier, ordering, sparsetype, time_dep
-  integer*8 :: iout(29), NEQ, nnz, Iinput
+  integer*8 :: iout(35), NEQ, nnz, Iinput
   real(kind=REALTYPE), allocatable :: y(:,:), umask(:,:)
   real(kind=REALTYPE), allocatable :: vmask(:,:), wmask(:,:)
 
@@ -269,11 +279,11 @@ program driver
   call FARKSetIin('MAX_NSTEPS', Iinput, ier)
   call FARKSetResTolerance(1, atol, ier)
 
-  ! attach matrix and linear solver objects to ARKDls interfaces
+  ! attach matrix and linear solver objects to ARKLs interfaces
   time_dep = 0
-  call FARKDlsInit(ier)
+  call FARKLsInit(ier)
   call FARKSparseSetJac(ier)
-  call FARKDlsMassInit(time_dep, ier)
+  call FARKLsMassInit(time_dep, ier)
   call FARKSparseSetMass(ier)
 
   ! Open output stream for results
@@ -339,7 +349,7 @@ program driver
   print *, '   Total number of nonlinear iterations = ', iout(11)
   print *, '   Total number of nonlinear solver convergence failures = ',iout(12)
   print *, '   Total number of error test failures = ', iout(10)
-  print *, '   Total number of mass matrix evaluations = ', iout(26)
+  print *, '   Total number of mass matrix evaluations = ', iout(28)
   print *, '  '
 
   ! clean up

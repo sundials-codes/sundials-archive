@@ -3,13 +3,27 @@
  * Programmer(s): Daniel R. Reynolds @ SMU
  *         Allan Taylor, Alan Hindmarsh and Radu Serban @ LLNL
  * -----------------------------------------------------------------
+ * LLNS/SMU Copyright Start
+ * Copyright (c) 2017, Southern Methodist University and 
+ * Lawrence Livermore National Security
+ *
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Southern Methodist University and Lawrence Livermore 
+ * National Laboratory under Contract DE-AC52-07NA27344.
+ * Produced at Southern Methodist University and the Lawrence 
+ * Livermore National Laboratory.
+ *
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS/SMU Copyright End
+ * -----------------------------------------------------------------
  * Example program for IDA: Food web, parallel, GMRES, IDABBD
  * preconditioner.
  *
- * This example program for IDA uses SUNSPGMR as the linear solver.
+ * This example program for IDA uses SUNLinSol_SPGMR as the linear solver.
  * It is written for a parallel computer system and uses the
  * IDABBDPRE band-block-diagonal preconditioner module for the
- * SUNSPGMR package. 
+ * SUNLinSol_SPGMR package. 
  *
  * The mathematical problem solved in this example is a DAE system
  * that arises from a system of partial differential equations after
@@ -68,7 +82,7 @@
  * submeshes, processor by processor, with an MXSUB by MYSUB mesh
  * on each of NPEX * NPEY processors.
  *
- * The DAE system is solved by IDA using the SUNSPGMR linear solver,
+ * The DAE system is solved by IDA using the SUNLinSol_SPGMR linear solver,
  * in conjunction with the preconditioner module IDABBDPRE. The
  * preconditioner uses a 5-diagonal band-block-diagonal
  * approximation (half-bandwidths = 2). Output is printed at
@@ -97,7 +111,6 @@
 #include <math.h>
 
 #include <ida/ida.h>
-#include <ida/ida_spils.h>
 #include <ida/ida_bbdpre.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <nvector/nvector_parallel.h>
@@ -309,13 +322,13 @@ int main(int argc, char *argv[])
   retval = IDASStolerances(ida_mem, rtol, atol);
   if(check_retval(&retval, "IDASStolerances", 1, thispe)) MPI_Abort(comm, 1);
 
-  /* Call SUNSPGMR and IDASpilsSetLinearSolver to specify the linear solver */
+  /* Call SUNLinSol_SPGMR and IDASetLinearSolver to specify the linear solver */
 
   maxl = 16;
-  LS = SUNSPGMR(cc, PREC_LEFT, maxl);
-  if(check_retval((void *)LS, "SUNSPGMR", 0, thispe)) MPI_Abort(comm, 1);
-  retval = IDASpilsSetLinearSolver(ida_mem, LS);
-  if(check_retval(&retval, "IDASpilsSetLinearSolver", 1, thispe)) MPI_Abort(comm, 1);
+  LS = SUNLinSol_SPGMR(cc, PREC_LEFT, maxl);
+  if(check_retval((void *)LS, "SUNLinSol_SPGMR", 0, thispe)) MPI_Abort(comm, 1);
+  retval = IDASetLinearSolver(ida_mem, LS, NULL);
+  if(check_retval(&retval, "IDASetLinearSolver", 1, thispe)) MPI_Abort(comm, 1);
 
   /* Call IDABBDPrecInit to initialize the band-block-diagonal preconditioner.
      The half-bandwidths for the difference quotient evaluation are exact
@@ -524,7 +537,7 @@ static void PrintHeader(sunindextype SystemSize, int maxl,
 #else
   printf("Tolerance parameters:  rtol = %g   atol = %g\n", rtol, atol);
 #endif
-  printf("Linear solver: SUNSPGMR     Max. Krylov dimension maxl: %d\n", maxl);
+  printf("Linear solver: SUNLinSol_SPGMR     Max. Krylov dimension maxl: %d\n", maxl);
   printf("Preconditioner: band-block-diagonal (IDABBDPRE), with parameters\n");
   printf("     mudq = %ld,  mldq = %ld,  mukeep = %ld,  mlkeep = %ld\n",
          (long int) mudq, (long int) mldq, (long int) mukeep, (long int) mlkeep);
@@ -619,16 +632,16 @@ static void PrintFinalStats(void *ida_mem)
   retval = IDAGetNumNonlinSolvIters(ida_mem, &nni);
   check_retval(&retval, "IDAGetNumNonlinSolvIters", 1, 0);
 
-  retval = IDASpilsGetNumConvFails(ida_mem, &ncfl);
-  check_retval(&retval, "IDASpilsGetNumConvFails", 1, 0);
-  retval = IDASpilsGetNumLinIters(ida_mem, &nli);
-  check_retval(&retval, "IDASpilsGetNumLinIters", 1, 0);
-  retval = IDASpilsGetNumPrecEvals(ida_mem, &npe);
-  check_retval(&retval, "IDASpilsGetNumPrecEvals", 1, 0);
-  retval = IDASpilsGetNumPrecSolves(ida_mem, &nps);
-  check_retval(&retval, "IDASpilsGetNumPrecSolves", 1, 0);
-  retval = IDASpilsGetNumResEvals(ida_mem, &nreLS);
-  check_retval(&retval, "IDASpilsGetNumResEvals", 1, 0);
+  retval = IDAGetNumLinConvFails(ida_mem, &ncfl);
+  check_retval(&retval, "IDAGetNumLinConvFails", 1, 0);
+  retval = IDAGetNumLinIters(ida_mem, &nli);
+  check_retval(&retval, "IDAGetNumLinIters", 1, 0);
+  retval = IDAGetNumPrecEvals(ida_mem, &npe);
+  check_retval(&retval, "IDAGetNumPrecEvals", 1, 0);
+  retval = IDAGetNumPrecSolves(ida_mem, &nps);
+  check_retval(&retval, "IDAGetNumPrecSolves", 1, 0);
+  retval = IDAGetNumLinResEvals(ida_mem, &nreLS);
+  check_retval(&retval, "IDAGetNumLinResEvals", 1, 0);
 
   retval = IDABBDPrecGetNumGfnEvals(ida_mem, &nge);
   check_retval(&retval, "IDABBDPrecGetNumGfnEvals", 1, 0);
@@ -656,7 +669,7 @@ static void PrintFinalStats(void *ida_mem)
  *   opt == 0 means SUNDIALS function allocates memory so check if
  *            returned NULL pointer
  *   opt == 1 means SUNDIALS function returns an integer value so check if
- *            retval >= 0
+ *            retval < 0
  *   opt == 2 means function allocates memory so check if returned
  *            NULL pointer 
  */

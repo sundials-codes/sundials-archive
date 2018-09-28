@@ -3,6 +3,16 @@
  * Programmer(s): S. D. Cohen, A. C. Hindmarsh, M. R. Wittman, and
  *                Radu Serban  @ LLNL
  * -----------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
+ * -----------------------------------------------------------------
  * Example problem:
  *
  * An ODE system is generated from the following 2-species diurnal
@@ -29,7 +39,7 @@
  * neq = 2*MX*MY.
  *
  * The solution is done with the BDF/GMRES method (i.e. using the
- * SUNSPGMR linear solver) and the block-diagonal part of the
+ * SUNLinSol_SPGMR linear solver) and the block-diagonal part of the
  * Newton matrix as a left preconditioner. A copy of the
  * block-diagonal part of the Jacobian is saved and conditionally
  * reused within the preconditioner routine.
@@ -53,7 +63,6 @@
 #include <nvector/nvector_parallel.h>  /* access to MPI-parallel N_Vector        */
 #include <sunlinsol/sunlinsol_spgmr.h> /* access to SPGMR SUNLinearSolver        */
 #include <sundials/sundials_dense.h>   /* prototypes for small dense fcts.       */
-#include <cvode/cvode_spils.h>         /* access to CVSpils interface            */
 #include <sundials/sundials_types.h>   /* definitions of realtype, booleantype   */
 #include <sundials/sundials_math.h>    /* definition of macros SUNSQR and EXP    */
 
@@ -247,17 +256,17 @@ int main(int argc, char *argv[])
 
   /* Create SPGMR solver structure with left preconditioning 
      and the default Krylov dimension maxl */
-  LS = SUNSPGMR(u, PREC_LEFT, 0);
-  if (check_retval((void *)LS, "SUNSPGMR", 0, my_pe)) MPI_Abort(comm, 1);
+  LS = SUNLinSol_SPGMR(u, PREC_LEFT, 0);
+  if (check_retval((void *)LS, "SUNLinSol_SPGMR", 0, my_pe)) MPI_Abort(comm, 1);
 
-  /* Attach SPGMR solver structure to CVSpils interface */
-  retval = CVSpilsSetLinearSolver(cvode_mem, LS);
-  if (check_retval(&retval, "CVSpilsSetLinearSolver", 1, my_pe)) MPI_Abort(comm, 1);
+  /* Attach SPGMR solver structure to CVode interface */
+  retval = CVodeSetLinearSolver(cvode_mem, LS, NULL);
+  if (check_retval(&retval, "CVodeSetLinearSolver", 1, my_pe)) MPI_Abort(comm, 1);
 
   /* Set preconditioner setup and solve routines Precond and PSolve, 
      and the pointer to the user-defined block data */
-  retval = CVSpilsSetPreconditioner(cvode_mem, Precond, PSolve);
-  if (check_retval(&retval, "CVSpilsSetPreconditioner", 1, my_pe)) MPI_Abort(comm, 1);
+  retval = CVodeSetPreconditioner(cvode_mem, Precond, PSolve);
+  if (check_retval(&retval, "CVodeSetPreconditioner", 1, my_pe)) MPI_Abort(comm, 1);
 
   if (my_pe == 0)
     printf("\n2-species diurnal advection-diffusion problem\n\n");
@@ -465,18 +474,18 @@ static void PrintFinalStats(void *cvode_mem)
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1, 0);
 
-  retval = CVSpilsGetWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
-  check_retval(&retval, "CVSpilsGetWorkSpace", 1, 0);
-  retval = CVSpilsGetNumLinIters(cvode_mem, &nli);
-  check_retval(&retval, "CVSpilsGetNumLinIters", 1, 0);
-  retval = CVSpilsGetNumPrecEvals(cvode_mem, &npe);
-  check_retval(&retval, "CVSpilsGetNumPrecEvals", 1, 0);
-  retval = CVSpilsGetNumPrecSolves(cvode_mem, &nps);
-  check_retval(&retval, "CVSpilsGetNumPrecSolves", 1, 0);
-  retval = CVSpilsGetNumConvFails(cvode_mem, &ncfl);
-  check_retval(&retval, "CVSpilsGetNumConvFails", 1, 0);
-  retval = CVSpilsGetNumRhsEvals(cvode_mem, &nfeLS);
-  check_retval(&retval, "CVSpilsGetNumRhsEvals", 1, 0);
+  retval = CVodeGetLinWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
+  check_retval(&retval, "CVodeGetLinWorkSpace", 1, 0);
+  retval = CVodeGetNumLinIters(cvode_mem, &nli);
+  check_retval(&retval, "CVodeGetNumLinIters", 1, 0);
+  retval = CVodeGetNumPrecEvals(cvode_mem, &npe);
+  check_retval(&retval, "CVodeGetNumPrecEvals", 1, 0);
+  retval = CVodeGetNumPrecSolves(cvode_mem, &nps);
+  check_retval(&retval, "CVodeGetNumPrecSolves", 1, 0);
+  retval = CVodeGetNumLinConvFails(cvode_mem, &ncfl);
+  check_retval(&retval, "CVodeGetNumLinConvFails", 1, 0);
+  retval = CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1, 0);
 
   printf("\nFinal Statistics: \n\n");
   printf("lenrw   = %5ld     leniw   = %5ld\n", lenrw, leniw);
@@ -944,7 +953,7 @@ static int PSolve(realtype tn, N_Vector u, N_Vector fu,
      opt == 0 means SUNDIALS function allocates memory so check if
               returned NULL pointer
      opt == 1 means SUNDIALS function returns an integer value so check if
-              retval >= 0
+              retval < 0
      opt == 2 means function allocates memory so check if returned
               NULL pointer */
 

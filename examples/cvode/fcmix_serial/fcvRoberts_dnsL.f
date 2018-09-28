@@ -1,4 +1,14 @@
-C     ----------------------------------------------------------------
+C     --------------------------------------------------------------------
+C     LLNS Copyright Start
+C     Copyright (c) 2017, Lawrence Livermore National Security
+C     This work was performed under the auspices of the U.S. Department 
+C     of Energy by Lawrence Livermore National Laboratory in part under 
+C     Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+C     Produced at the Lawrence Livermore National Laboratory.
+C     All rights reserved.
+C     For details, see the LICENSE file.
+C     LLNS Copyright End
+C     --------------------------------------------------------------------
 C     FCVODE Example Problem: Robertson kinetics, Lapack linear solver
 C                             with dense user Jacobian.
 C
@@ -27,7 +37,7 @@ C     various counters of interest are printed.
 C
 C     Note that this problem should only work with SUNDIALS configured
 C     to use 'realtype' as 'double' and 'sunindextype' as '32bit'
-C     ----------------------------------------------------------------
+C     --------------------------------------------------------------------
 C
       IMPLICIT NONE
 C
@@ -108,11 +118,11 @@ C     Call FCVROOTINIT to specify the root function g with 2 components
         STOP
       ENDIF
 
-C     attach the matrix and linear solver modules to CVDls interface
-      CALL FCVDLSINIT(IER)
+C     attach the matrix and linear solver modules to CVLs interface
+      CALL FCVLSINIT(IER)
       IF (IER .NE. 0) THEN
         WRITE(6,40) IER
- 40     FORMAT(///' SUNDIALS_ERROR: FCVDLSINIT returned IER = ', I5)
+ 40     FORMAT(///' SUNDIALS_ERROR: FCVLSINIT returned IER = ', I5)
         CALL FCVFREE
         STOP
       ENDIF

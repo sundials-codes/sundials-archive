@@ -2,9 +2,19 @@
  * -----------------------------------------------------------------
  * Programmer(s): Slaven Peles @ LLNL
  * -----------------------------------------------------------------
- * Acknowledgements: This example is based on cvAdvDiff_bnd 
- *                   example by Scott D. Cohen, Alan C. 
+ * Acknowledgements: This example is based on cvAdvDiff_bnd
+ *                   example by Scott D. Cohen, Alan C.
  *                   Hindmarsh and Radu Serban @ LLNL
+ * -----------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
  * -----------------------------------------------------------------
  * Example problem:
  *
@@ -26,6 +36,9 @@
  * It uses scalar relative and absolute tolerances.
  * Output is printed at t = .1, .2, ..., 1.
  * Run statistics (optional outputs) are printed at the end.
+ *
+ * This example uses RAJA hardware abstraction layer to create
+ * an executable that runs on a GPU device.
  * -----------------------------------------------------------------
  */
 
@@ -35,13 +48,11 @@
 
 #include <cvode/cvode.h>
 #include <sunlinsol/sunlinsol_spgmr.h> /* access to SPGMR SUNLinearSolver        */
-#include <cvode/cvode_spils.h>         /* access to CVSpils interface            */
 #include <nvector/nvector_raja.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 
 #include <RAJA/RAJA.hpp>
-
 
 /* Real Constants */
 
@@ -143,16 +154,16 @@ int main(int argc, char** argv)
 
   /* Create SPGMR solver structure without preconditioning
    * and the maximum Krylov dimension maxl */
-  LS = SUNSPGMR(u, PREC_NONE, 0);
-  if(check_retval(&retval, "SUNSPGMR", 1)) return(1);
+  LS = SUNLinSol_SPGMR(u, PREC_NONE, 0);
+  if(check_retval(&retval, "SUNLinSol_SPGMR", 1)) return(1);
 
-  /* Set CVSpils linear solver to LS */
-  retval = CVSpilsSetLinearSolver(cvode_mem, LS);
-  if(check_retval(&retval, "CVSpilsSetLinearSolver", 1)) return(1);
+  /* Set CVode linear solver to LS */
+  retval = CVodeSetLinearSolver(cvode_mem, LS, NULL);
+  if(check_retval(&retval, "CVodeSetLinearSolver", 1)) return(1);
 
   /* Set the Jacobian-times-vector function */
-  retval = CVSpilsSetJacTimes(cvode_mem, NULL, jtv);
-  if(check_retval(&retval, "CVSpilsSetJacTimesVecFn", 1)) return(1);
+  retval = CVodeSetJacTimes(cvode_mem, NULL, jtv);
+  if(check_retval(&retval, "CVodeSetJacTimesVecFn", 1)) return(1);
 
   /* In loop over output points: call CVode, print results, test for errors */
 
@@ -271,25 +282,27 @@ static int f(realtype t, N_Vector u, N_Vector udot, void *user_data)
 
   const sunindextype zero = 0;
 
-  RAJA::forall<RAJA::cuda_exec<256> >(zero, NEQ, [=] __device__(sunindextype index) {
-    sunindextype i = index/MY;
-    sunindextype j = index%MY;
+  RAJA::forall<RAJA::cuda_exec<256> >(RAJA::RangeSegment(zero, NEQ),
+    [=] __device__(sunindextype index) {
+      sunindextype i = index/MY;
+      sunindextype j = index%MY;
 
-    realtype uab = udata[index];
+      realtype uab = udata[index];
 
-    realtype udn = (j == 0)    ? ZERO : udata[index - 1];
-    realtype uup = (j == MY-1) ? ZERO : udata[index + 1];
-    realtype ult = (i == 0)    ? ZERO : udata[index - MY];
-    realtype urt = (i == MX-1) ? ZERO : udata[index + MY];
+      realtype udn = (j == 0)    ? ZERO : udata[index - 1];
+      realtype uup = (j == MY-1) ? ZERO : udata[index + 1];
+      realtype ult = (i == 0)    ? ZERO : udata[index - MY];
+      realtype urt = (i == MX-1) ? ZERO : udata[index + MY];
 
-    /* Set diffusion and advection terms and load into udot */
+      /* Set diffusion and advection terms and load into udot */
 
-    realtype hdiff = hordc*(ult -TWO*uab + urt);
-    realtype hadv  = horac*(urt - ult);
-    realtype vdiff = verdc*(udn -TWO*uab + uup);
+      realtype hdiff = hordc*(ult -TWO*uab + urt);
+      realtype hadv  = horac*(urt - ult);
+      realtype vdiff = verdc*(udn -TWO*uab + uup);
 
-    dudata[index] = hdiff + hadv + vdiff;
-  });
+      dudata[index] = hdiff + hadv + vdiff;
+    }
+  );
 
   return(0);
 }
@@ -319,17 +332,19 @@ static int jtv(N_Vector v, N_Vector Jv, realtype t,
 
   N_VConst(ZERO, Jv);
 
-  RAJA::forall<RAJA::cuda_exec<256> >(zero, NEQ, [=] __device__(sunindextype index) {
-    sunindextype i = index/MY;
-    sunindextype j = index%MY;
+  RAJA::forall<RAJA::cuda_exec<256> >(RAJA::RangeSegment(zero, NEQ),
+    [=] __device__(sunindextype index) {
+      sunindextype i = index/MY;
+      sunindextype j = index%MY;
 
-    Jvdata[index] = -TWO*(verdc+hordc) * vdata[index];
-    if (i !=    0) Jvdata[index] += (hordc - horac) * vdata[index-MY];
-    if (i != MX-1) Jvdata[index] += (hordc + horac) * vdata[index+MY];
-    if (j !=    0) Jvdata[index] += verdc * vdata[index-1];
-    if (j != MY-1) Jvdata[index] += verdc * vdata[index+1];
-  });
-  
+      Jvdata[index] = -TWO*(verdc+hordc) * vdata[index];
+      if (i !=    0) Jvdata[index] += (hordc - horac) * vdata[index-MY];
+      if (i != MX-1) Jvdata[index] += (hordc + horac) * vdata[index+MY];
+      if (j !=    0) Jvdata[index] += verdc * vdata[index-1];
+      if (j != MY-1) Jvdata[index] += verdc * vdata[index+1];
+    }
+  );
+
   return(0);
 }
 
@@ -344,8 +359,8 @@ static int jtv(N_Vector v, N_Vector Jv, realtype t,
 static void PrintHeader(realtype reltol, realtype abstol, realtype umax, UserData data)
 {
   printf("\n2-D Advection-Diffusion Equation\n");
-  printf("Mesh dimensions = %d X %d\n", data->MX, data->MY);
-  printf("Total system size = %d\n", data->NEQ);
+  printf("Mesh dimensions = %ld X %ld\n", (long) data->MX, (long) data->MY);
+  printf("Total system size = %ld\n", (long) data->NEQ);
 #if defined(SUNDIALS_EXTENDED_PRECISION)
   printf("Tolerance parameters: reltol = %Lg   abstol = %Lg\n\n",
          reltol, abstol);
@@ -402,23 +417,23 @@ static void PrintFinalStats(void *cvode_mem)
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  retval = CVSpilsGetWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
-  check_retval(&retval, "CVSpilsGetWorkSpace", 1);
-  retval = CVSpilsGetNumLinIters(cvode_mem, &nli);
-  check_retval(&retval, "CVSpilsGetNumLinIters", 1);
-  retval = CVSpilsGetNumPrecEvals(cvode_mem, &npe);
-  check_retval(&retval, "CVSpilsGetNumPrecEvals", 1);
-  retval = CVSpilsGetNumPrecSolves(cvode_mem, &nps);
-  check_retval(&retval, "CVSpilsGetNumPrecSolves", 1);
-  retval = CVSpilsGetNumConvFails(cvode_mem, &ncfl);
-  check_retval(&retval, "CVSpilsGetNumConvFails", 1);
-  retval = CVSpilsGetNumRhsEvals(cvode_mem, &nfeLS);
-  check_retval(&retval, "CVSpilsGetNumRhsEvals", 1);
+  retval = CVodeGetLinWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
+  check_retval(&retval, "CVodeGetLinWorkSpace", 1);
+  retval = CVodeGetNumLinIters(cvode_mem, &nli);
+  check_retval(&retval, "CVodeGetNumLinIters", 1);
+  retval = CVodeGetNumPrecEvals(cvode_mem, &npe);
+  check_retval(&retval, "CVodeGetNumPrecEvals", 1);
+  retval = CVodeGetNumPrecSolves(cvode_mem, &nps);
+  check_retval(&retval, "CVodeGetNumPrecSolves", 1);
+  retval = CVodeGetNumLinConvFails(cvode_mem, &ncfl);
+  check_retval(&retval, "CVodeGetNumLinConvFails", 1);
+  retval = CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
 
   printf("\nFinal Statistics.. \n\n");
-  printf("lenrw   = %5ld     leniw   = %5ld\n", lenrw, leniw);
-  printf("lenrwLS = %5ld     leniwLS = %5ld\n", lenrwLS, leniwLS);
-  printf("nst     = %5ld\n"                  , nst);
+  printf("lenrw   = %5ld     leniw   = %5ld\n"  , lenrw, leniw);
+  printf("lenrwLS = %5ld     leniwLS = %5ld\n"  , lenrwLS, leniwLS);
+  printf("nst     = %5ld\n"                     , nst);
   printf("nfe     = %5ld     nfeLS   = %5ld\n"  , nfe, nfeLS);
   printf("nni     = %5ld     nli     = %5ld\n"  , nni, nli);
   printf("nsetups = %5ld     netf    = %5ld\n"  , nsetups, netf);

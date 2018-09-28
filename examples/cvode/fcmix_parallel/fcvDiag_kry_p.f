@@ -1,8 +1,18 @@
-C     ----------------------------------------------------------------
+C     --------------------------------------------------------------------
+C     LLNS Copyright Start
+C     Copyright (c) 2017, Lawrence Livermore National Security
+C     This work was performed under the auspices of the U.S. Department 
+C     of Energy by Lawrence Livermore National Laboratory in part under 
+C     Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+C     Produced at the Lawrence Livermore National Laboratory.
+C     All rights reserved.
+C     For details, see the LICENSE file.
+C     LLNS Copyright End
+C     --------------------------------------------------------------------
 C     Diagonal ODE example. Stiff case, with BDF/SPGMR, diagonal
 C     preconditioner. Solved with preconditioning on left, then with
 C     preconditioning on right.
-C     ----------------------------------------------------------------
+C     --------------------------------------------------------------------
 C
 C     Include MPI-Fortran header file for MPI_COMM_WORLD, MPI types.
 
@@ -25,7 +35,7 @@ C
 C
       DATA ATOL/1.0D-10/, RTOL/1.0D-5/, DTOUT/0.1D0/, NOUT/10/
       DATA LNST/3/, LNFE/4/, LNETF/5/,  LNCF/6/, LNNI/7/, LNSETUP/8/, 
-     1     LNPE/18/, LNLI/20/, LNPS/19/, LNCFL/21/
+     1     LNPE/20/, LNLI/22/, LNPS/21/, LNCFL/23/
 C
 C     Get NPES and MYPE.  Requires initialization of MPI.
       CALL MPI_INIT(IER)
@@ -123,17 +133,17 @@ C
          STOP
       ENDIF
 C
-C     attach linear solver module to CVSpils interface
-      CALL FCVSPILSINIT(IER)
+C     attach linear solver module to CVLs interface
+      CALL FCVLSINIT(IER)
       IF (IER .NE. 0) THEN
          WRITE(6,32) IER
- 32      FORMAT(///' SUNDIALS_ERROR: FCVSPILSINIT returned IER = ', I5)
+ 32      FORMAT(///' SUNDIALS_ERROR: FCVLSINIT returned IER = ', I5)
          CALL MPI_ABORT(MPI_COMM_WORLD, 1, IER)
          STOP
       ENDIF
 C     
-C     attach preconditioner to CVSpils interface
-      CALL FCVSPILSSETPREC(1, IER)
+C     attach preconditioner to CVLs interface
+      CALL FCVLSSETPREC(1, IER)
 C
 C     Loop through tout values, call solver, print output, test for failure.
       TOUT = DTOUT

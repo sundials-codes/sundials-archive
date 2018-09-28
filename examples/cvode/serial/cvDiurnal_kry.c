@@ -2,6 +2,16 @@
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh and
  *                Radu Serban @ LLNL
  * -----------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
+ * -----------------------------------------------------------------
  * Example problem:
  *
  * An ODE system is generated from the following 2-species diurnal
@@ -20,7 +30,7 @@
  * The PDE system is treated by central differences on a uniform
  * 10 x 10 mesh, with simple polynomial initial profiles.
  * The problem is solved with CVODE, with the BDF/GMRES
- * method (i.e. using the SUNSPGMR linear solver) and the
+ * method (i.e. using the SUNLinSol_SPGMR linear solver) and the
  * block-diagonal part of the Newton matrix as a left
  * preconditioner. A copy of the block-diagonal part of the
  * Jacobian is saved and conditionally reused within the Precond
@@ -34,7 +44,6 @@
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts.  */
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunlinsol/sunlinsol_spgmr.h> /* access to SPGMR SUNLinearSolver      */
-#include <cvode/cvode_spils.h>         /* access to CVSpils interface          */
 #include <sundials/sundials_dense.h>   /* use generic dense solver in precond. */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
 #include <sundials/sundials_math.h>    /* contains the macros ABS, SUNSQR, EXP */
@@ -192,22 +201,22 @@ int main()
   retval = CVodeSStolerances(cvode_mem, reltol, abstol);
   if (check_retval(&retval, "CVodeSStolerances", 1)) return(1);
 
-  /* Call SUNSPGMR to specify the linear solver SUNSPGMR 
+  /* Call SUNLinSol_SPGMR to specify the linear solver SPGMR 
    * with left preconditioning and the default Krylov dimension */
-  LS = SUNSPGMR(u, PREC_LEFT, 0);
-  if(check_retval((void *)LS, "SUNSPGMR", 0)) return(1);
+  LS = SUNLinSol_SPGMR(u, PREC_LEFT, 0);
+  if(check_retval((void *)LS, "SUNLinSol_SPGMR", 0)) return(1);
 
-  /* Call CVSpilsSetLinearSolver to attach the linear sovler to CVode */
-  retval = CVSpilsSetLinearSolver(cvode_mem, LS);
-  if (check_retval(&retval, "CVSpilsSetLinearSolver", 1)) return 1;
+  /* Call CVodeSetLinearSolver to attach the linear sovler to CVode */
+  retval = CVodeSetLinearSolver(cvode_mem, LS, NULL);
+  if (check_retval(&retval, "CVodeSetLinearSolver", 1)) return 1;
 
   /* set the JAcobian-times-vector function */
-  retval = CVSpilsSetJacTimes(cvode_mem, NULL, jtv);
-  if(check_retval(&retval, "CVSpilsSetJacTimes", 1)) return(1);
+  retval = CVodeSetJacTimes(cvode_mem, NULL, jtv);
+  if(check_retval(&retval, "CVodeSetJacTimes", 1)) return(1);
 
   /* Set the preconditioner solve and setup functions */
-  retval = CVSpilsSetPreconditioner(cvode_mem, Precond, PSolve);
-  if(check_retval(&retval, "CVSpilsSetPreconditioner", 1)) return(1);
+  retval = CVodeSetPreconditioner(cvode_mem, Precond, PSolve);
+  if(check_retval(&retval, "CVodeSetPreconditioner", 1)) return(1);
 
   /* In loop over output points, call CVode, print results, test for error */
   printf(" \n2-species diurnal advection-diffusion problem\n\n");
@@ -378,18 +387,18 @@ static void PrintFinalStats(void *cvode_mem)
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  retval = CVSpilsGetWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
-  check_retval(&retval, "CVSpilsGetWorkSpace", 1);
-  retval = CVSpilsGetNumLinIters(cvode_mem, &nli);
-  check_retval(&retval, "CVSpilsGetNumLinIters", 1);
-  retval = CVSpilsGetNumPrecEvals(cvode_mem, &npe);
-  check_retval(&retval, "CVSpilsGetNumPrecEvals", 1);
-  retval = CVSpilsGetNumPrecSolves(cvode_mem, &nps);
-  check_retval(&retval, "CVSpilsGetNumPrecSolves", 1);
-  retval = CVSpilsGetNumConvFails(cvode_mem, &ncfl);
-  check_retval(&retval, "CVSpilsGetNumConvFails", 1);
-  retval = CVSpilsGetNumRhsEvals(cvode_mem, &nfeLS);
-  check_retval(&retval, "CVSpilsGetNumRhsEvals", 1);
+  retval = CVodeGetLinWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
+  check_retval(&retval, "CVodeGetLinWorkSpace", 1);
+  retval = CVodeGetNumLinIters(cvode_mem, &nli);
+  check_retval(&retval, "CVodeGetNumLinIters", 1);
+  retval = CVodeGetNumPrecEvals(cvode_mem, &npe);
+  check_retval(&retval, "CVodeGetNumPrecEvals", 1);
+  retval = CVodeGetNumPrecSolves(cvode_mem, &nps);
+  check_retval(&retval, "CVodeGetNumPrecSolves", 1);
+  retval = CVodeGetNumLinConvFails(cvode_mem, &ncfl);
+  check_retval(&retval, "CVodeGetNumLinConvFails", 1);
+  retval = CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
 
   printf("\nFinal Statistics.. \n\n");
   printf("lenrw   = %5ld     leniw   = %5ld\n"  , lenrw, leniw);
@@ -406,7 +415,7 @@ static void PrintFinalStats(void *cvode_mem)
      opt == 0 means SUNDIALS function allocates memory so check if
               returned NULL pointer
      opt == 1 means SUNDIALS function returns an integer value so check if
-              retval >= 0
+              retval < 0
      opt == 2 means function allocates memory so check if returned
               NULL pointer */
 
@@ -542,7 +551,7 @@ static int jtv(N_Vector v, N_Vector Jv, realtype t,
                N_Vector u, N_Vector fu,
                void *user_data, N_Vector tmp)
 {
-  realtype c1, c2, c1dn, c2dn, c1up, c2up, c1lt, c2lt, c1rt, c2rt;
+  realtype c1, c2;
   realtype v1, v2, v1dn, v2dn, v1up, v2up, v1lt, v2lt, v1rt, v2rt;
   realtype Jv1, Jv2;
   realtype cydn, cyup;
@@ -603,11 +612,6 @@ static int jtv(N_Vector v, N_Vector Jv, realtype t,
       v1 = IJKth(vdata,1,jx,jy); 
       v2 = IJKth(vdata,2,jx,jy);
 
-      c1dn = IJKth(udata,1,jx,jy+idn);
-      c2dn = IJKth(udata,2,jx,jy+idn);
-      c1up = IJKth(udata,1,jx,jy+iup);
-      c2up = IJKth(udata,2,jx,jy+iup);
-
       v1dn = IJKth(vdata,1,jx,jy+idn);
       v2dn = IJKth(vdata,2,jx,jy+idn);
       v1up = IJKth(vdata,1,jx,jy+iup);
@@ -615,11 +619,6 @@ static int jtv(N_Vector v, N_Vector Jv, realtype t,
 
       ileft = (jx == 0) ? 1 : -1;
       iright =(jx == MX-1) ? -1 : 1;
-
-      c1lt = IJKth(udata,1,jx+ileft,jy); 
-      c2lt = IJKth(udata,2,jx+ileft,jy);
-      c1rt = IJKth(udata,1,jx+iright,jy);
-      c2rt = IJKth(udata,2,jx+iright,jy);
 
       v1lt = IJKth(vdata,1,jx+ileft,jy); 
       v2lt = IJKth(vdata,2,jx+ileft,jy);

@@ -24,10 +24,9 @@ INSTALL(CODE "MESSAGE(\"\nInstall IDA\n\")")
 SET(ida_SOURCES
   ida.c
   ida_bbdpre.c
-  ida_direct.c
   ida_ic.c
   ida_io.c
-  ida_spils.c
+  ida_ls.c
   ida_nls.c
   )
 
@@ -44,6 +43,7 @@ SET(shared_SOURCES
   ${sundials_SOURCE_DIR}/src/sundials/sundials_direct.c
   ${sundials_SOURCE_DIR}/src/sundials/sundials_iterative.c
   ${sundials_SOURCE_DIR}/src/sundials/sundials_version.c
+  ${sundials_SOURCE_DIR}/src/sundials/sundials_nvector_senswrapper.c
   ${sundials_SOURCE_DIR}/src/nvec_ser/nvector_serial.c
   )
 
@@ -78,6 +78,7 @@ SET(ida_HEADERS
   ida.h
   ida_bbdpre.h
   ida_direct.h
+  ida_ls.h
   ida_spils.h
   )
 

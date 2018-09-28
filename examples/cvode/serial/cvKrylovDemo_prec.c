@@ -2,6 +2,16 @@
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh and
  *                Radu Serban @ LLNL
  * --------------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
+ * --------------------------------------------------------------------
  * Demonstration program for CVODE - Krylov linear solver.
  * ODE system from ns-species interaction PDE in 2 dimensions.
  * 
@@ -45,7 +55,7 @@
  *
  * The resulting ODE system is stiff.
  *
- * The ODE system is solved using Newton iteration and the SUNSPGMR
+ * The ODE system is solved using Newton iteration and the SUNLinSol_SPGMR
  * linear solver (scaled preconditioned GMRES).
  *
  * The preconditioner matrix used is the product of two matrices:
@@ -59,10 +69,10 @@
  * The product preconditoner is applied on the left and on the
  * right. In each case, both the modified and classical Gram-Schmidt
  * options are tested.
- * In the series of runs, CVodeInit, SUNSPGMR, and 
- * CVDlsSetLinearSolver are called only for the first run, whereas 
- * CVodeReInit, SUNSPGMRSetPrecType, and SUNSPGMRSetGSType are called
- * for each of the remaining three runs.
+ * In the series of runs, CVodeInit, SUNLinSol_SPGMR, and 
+ * CVSetLinearSolver are called only for the first run, whereas 
+ * CVodeReInit, SUNLinSol_SPGMRSetPrecType, and SUNLinSol_SPGMRSetGSType
+ * are called for each of the remaining three runs.
  *
  * A problem description, performance statistics at selected output
  * times, and final statistics are written to standard output.
@@ -82,7 +92,8 @@
  * Matrix Methods in Stiff ODE Systems, J. Appl. Math. & Comp., 31
  * (1989), pp. 40-91.  Also available as Lawrence Livermore National
  * Laboratory Report UCRL-95088, Rev. 1, June 1987.
- * --------------------------------------------------------------------*/
+ * --------------------------------------------------------------------
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,7 +101,6 @@
 
 #include <cvode/cvode.h>                /* main integrator header file                 */
 #include <sunlinsol/sunlinsol_spgmr.h>  /* access to SPGMR SUNLinearSolver             */
-#include <cvode/cvode_spils.h>          /* access to CVSpils interface                 */
 #include <nvector/nvector_serial.h>     /* serial N_Vector types, fct. and macros      */
 #include <sundials/sundials_dense.h>    /* use generic DENSE solver in preconditioning */
 #include <sundials/sundials_types.h>    /* definition of realtype                      */
@@ -137,7 +147,7 @@
 #define RTOL RCONST(1.0e-5)
 #define ATOL RCONST(1.0e-5)
 
-/* Spgmr/SPILS Constants */
+/* Spgmr/CVLS Constants */
 
 #define MAXL 0     /* => use default = MIN(NEQ, 5)            */
 #define DELT ZERO  /* => use default = 0.05                   */
@@ -248,7 +258,7 @@ int main()
       CInit(c, wdata);
       PrintHeader(jpre, gstype);
 
-      /* Call CVodeInit or CVodeReInit, then SUNSPGMR to set up problem */
+      /* Call CVodeInit or CVodeReInit, then SUNLinSol_SPGMR to set up problem */
       
       firstrun = (jpre == PREC_LEFT) && (gstype == MODIFIED_GS);
       if (firstrun) {
@@ -266,30 +276,30 @@ int main()
         retval = CVodeSStolerances(cvode_mem, reltol, abstol);
         if(check_retval(&retval, "CVodeSStolerances", 1)) return(1);
 
-        LS = SUNSPGMR(c, jpre, MAXL);
-        if(check_retval((void *)LS, "SUNSPGMR", 0)) return(1);
+        LS = SUNLinSol_SPGMR(c, jpre, MAXL);
+        if(check_retval((void *)LS, "SUNLinSol_SPGMR", 0)) return(1);
 
-        retval = CVSpilsSetLinearSolver(cvode_mem, LS);
-        if(check_retval(&retval, "CVSpilsSetLinearSolver", 1)) return 1;
+        retval = CVodeSetLinearSolver(cvode_mem, LS, NULL);
+        if(check_retval(&retval, "CVodeSetLinearSolver", 1)) return 1;
 
-        retval = SUNSPGMRSetGSType(LS, gstype);
-        if(check_retval(&retval, "SUNSPGMRSetGSType", 1)) return(1);
+        retval = SUNLinSol_SPGMRSetGSType(LS, gstype);
+        if(check_retval(&retval, "SUNLinSol_SPGMRSetGSType", 1)) return(1);
 
-        retval = CVSpilsSetEpsLin(cvode_mem, DELT);
-        if(check_retval(&retval, "CVSpilsSetEpsLin", 1)) return(1);
+        retval = CVodeSetEpsLin(cvode_mem, DELT);
+        if(check_retval(&retval, "CVodeSetEpsLin", 1)) return(1);
 
-        retval = CVSpilsSetPreconditioner(cvode_mem, Precond, PSolve);
-        if(check_retval(&retval, "CVSpilsSetPreconditioner", 1)) return(1);
+        retval = CVodeSetPreconditioner(cvode_mem, Precond, PSolve);
+        if(check_retval(&retval, "CVodeSetPreconditioner", 1)) return(1);
 
       } else {
 
         retval = CVodeReInit(cvode_mem, T0, c);
         if(check_retval(&retval, "CVodeReInit", 1)) return(1);
 
-        retval = SUNSPGMRSetPrecType(LS, jpre);
-        check_retval(&retval, "SUNSPGMRSetPrecType", 1);
-        retval = SUNSPGMRSetGSType(LS, gstype);
-        if(check_retval(&retval, "SUNSPGMRSetGSType", 1)) return(1);
+        retval = SUNLinSol_SPGMRSetPrecType(LS, jpre);
+        check_retval(&retval, "SUNLinSol_SPGMRSetPrecType", 1);
+        retval = SUNLinSol_SPGMRSetGSType(LS, gstype);
+        if(check_retval(&retval, "SUNLinSol_SPGMRSetGSType", 1)) return(1);
 
       }
       
@@ -594,24 +604,24 @@ static void PrintFinalStats(void *cvode_mem)
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  retval = CVSpilsGetWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
-  check_retval(&retval, "CVSpilsGetWorkSpace", 1);
-  retval = CVSpilsGetNumLinIters(cvode_mem, &nli);
-  check_retval(&retval, "CVSpilsGetNumLinIters", 1);
-  retval = CVSpilsGetNumPrecEvals(cvode_mem, &npe);
-  check_retval(&retval, "CVSpilsGetNumPrecEvals", 1);
-  retval = CVSpilsGetNumPrecSolves(cvode_mem, &nps);
-  check_retval(&retval, "CVSpilsGetNumPrecSolves", 1);
-  retval = CVSpilsGetNumConvFails(cvode_mem, &ncfl);
-  check_retval(&retval, "CVSpilsGetNumConvFails", 1);
-  retval = CVSpilsGetNumRhsEvals(cvode_mem, &nfeLS);
-  check_retval(&retval, "CVSpilsGetNumRhsEvals", 1);
+  retval = CVodeGetLinWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
+  check_retval(&retval, "CVodeGetLinWorkSpace", 1);
+  retval = CVodeGetNumLinIters(cvode_mem, &nli);
+  check_retval(&retval, "CVodeGetNumLinIters", 1);
+  retval = CVodeGetNumPrecEvals(cvode_mem, &npe);
+  check_retval(&retval, "CVodeGetNumPrecEvals", 1);
+  retval = CVodeGetNumPrecSolves(cvode_mem, &nps);
+  check_retval(&retval, "CVodeGetNumPrecSolves", 1);
+  retval = CVodeGetNumLinConvFails(cvode_mem, &ncfl);
+  check_retval(&retval, "CVodeGetNumLinConvFails", 1);
+  retval = CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
 
   printf("\n\n Final statistics for this run:\n\n");
   printf(" CVode real workspace length           = %4ld \n", lenrw);
   printf(" CVode integer workspace length        = %4ld \n", leniw);
-  printf(" CVSPILS real workspace length         = %4ld \n", lenrwLS);
-  printf(" CVSPILS integer workspace length      = %4ld \n", leniwLS);
+  printf(" CVLS real workspace length            = %4ld \n", lenrwLS);
+  printf(" CVLS integer workspace length         = %4ld \n", leniwLS);
   printf(" Number of steps                       = %4ld \n", nst);
   printf(" Number of f-s                         = %4ld \n", nfe);
   printf(" Number of f-s (SPGMR)                 = %4ld \n", nfeLS);
@@ -1107,7 +1117,7 @@ static void v_zero(realtype u[], int n)
      opt == 0 means SUNDIALS function allocates memory so check if
               returned NULL pointer
      opt == 1 means SUNDIALS function returns an integer value so check if
-              retval >= 0
+              retval < 0
      opt == 2 means function allocates memory so check if returned
               NULL pointer */
 

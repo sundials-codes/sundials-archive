@@ -2,9 +2,19 @@
  * -----------------------------------------------------------------
  * Programmer(s): Slaven Peles @ LLNL
  * -----------------------------------------------------------------
- * Acknowledgements: This example is based on cvAdvDiff_bnd 
- *                   example by Scott D. Cohen, Alan C. 
+ * Acknowledgements: This example is based on cvAdvDiff_bnd
+ *                   example by Scott D. Cohen, Alan C.
  *                   Hindmarsh and Radu Serban @ LLNL
+ * -----------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
  * -----------------------------------------------------------------
  * Example problem:
  *
@@ -35,7 +45,6 @@
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <sunlinsol/sunlinsol_spgmr.h> /* access to SPGMR SUNLinearSolver     */
-#include <cvode/cvode_spils.h>         /* access to CVSpils interface */
 #include <sundials/sundials_types.h>   /* definition of type realtype */
 #include <sundials/sundials_math.h>    /* definition of ABS and EXP   */
 
@@ -68,11 +77,11 @@ __global__ void fKernel(const realtype *u, realtype *udot,
 
   /* Loop over all grid points. */
   tid = blockDim.x * blockIdx.x + threadIdx.x;
-  
+
   if (tid < MX*MY) {
     i = tid/MY;
     j = tid%MY;
-    
+
     uij = u[tid];
     udn = (j ==    0) ? ZERO : u[tid - 1];
     uup = (j == MY-1) ? ZERO : u[tid + 1];
@@ -80,7 +89,7 @@ __global__ void fKernel(const realtype *u, realtype *udot,
     urt = (i == MX-1) ? ZERO : u[tid + MY];
 
     /* Set diffusion and advection terms and load into udot */
-    
+
     hdiff = hordc*(ult - TWO*uij + urt);
     hadv  = horac*(urt - ult);
     vdiff = verdc*(uup - TWO*uij + udn);
@@ -97,13 +106,13 @@ __global__ void jtvKernel(const realtype *vdata, realtype *Jvdata,
 
   /* Loop over all grid points. */
   tid = blockDim.x * blockIdx.x + threadIdx.x;
-  
+
   if (tid < MX*MY) {
-      
+
     i = tid/MY;
     j = tid%MY;
-      
-      
+
+
     /* set the tid-th element of Jv */
 
     Jvdata[tid] = -TWO*(verdc+hordc) * vdata[tid];
@@ -200,16 +209,16 @@ int main(int argc, char** argv)
 
   /* Create SPGMR solver structure without preconditioning
    * and the maximum Krylov dimension maxl */
-  LS = SUNSPGMR(u, PREC_NONE, 0);
-  if(check_retval(&retval, "SUNSPGMR", 1)) return(1);
+  LS = SUNLinSol_SPGMR(u, PREC_NONE, 0);
+  if(check_retval(&retval, "SUNLinSol_SPGMR", 1)) return(1);
 
-  /* Set CVSpils linear solver to LS */
-  retval = CVSpilsSetLinearSolver(cvode_mem, LS);
-  if(check_retval(&retval, "CVSpilsSetLinearSolver", 1)) return(1);
+  /* Set CVode linear solver to LS */
+  retval = CVodeSetLinearSolver(cvode_mem, LS, NULL);
+  if(check_retval(&retval, "CVodeSetLinearSolver", 1)) return(1);
 
-  /* Set the JAcobian-times-vector function */
-  retval = CVSpilsSetJacTimes(cvode_mem, NULL, jtv);
-  if(check_retval(&retval, "CVSpilsSetJacTimesVecFn", 1)) return(1);
+  /* Set the Jacobian-times-vector function */
+  retval = CVodeSetJacTimes(cvode_mem, NULL, jtv);
+  if(check_retval(&retval, "CVodeSetJacTimesVecFn", 1)) return(1);
 
   /* In loop over output points: call CVode, print results, test for errors */
 
@@ -431,23 +440,23 @@ static void PrintFinalStats(void *cvode_mem)
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  retval = CVSpilsGetWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
-  check_retval(&retval, "CVSpilsGetWorkSpace", 1);
-  retval = CVSpilsGetNumLinIters(cvode_mem, &nli);
-  check_retval(&retval, "CVSpilsGetNumLinIters", 1);
-  retval = CVSpilsGetNumPrecEvals(cvode_mem, &npe);
-  check_retval(&retval, "CVSpilsGetNumPrecEvals", 1);
-  retval = CVSpilsGetNumPrecSolves(cvode_mem, &nps);
-  check_retval(&retval, "CVSpilsGetNumPrecSolves", 1);
-  retval = CVSpilsGetNumConvFails(cvode_mem, &ncfl);
-  check_retval(&retval, "CVSpilsGetNumConvFails", 1);
-  retval = CVSpilsGetNumRhsEvals(cvode_mem, &nfeLS);
-  check_retval(&retval, "CVSpilsGetNumRhsEvals", 1);
+  retval = CVodeGetLinWorkSpace(cvode_mem, &lenrwLS, &leniwLS);
+  check_retval(&retval, "CVodeGetLinWorkSpace", 1);
+  retval = CVodeGetNumLinIters(cvode_mem, &nli);
+  check_retval(&retval, "CVodeGetNumLinIters", 1);
+  retval = CVodeGetNumPrecEvals(cvode_mem, &npe);
+  check_retval(&retval, "CVodeGetNumPrecEvals", 1);
+  retval = CVodeGetNumPrecSolves(cvode_mem, &nps);
+  check_retval(&retval, "CVodeGetNumPrecSolves", 1);
+  retval = CVodeGetNumLinConvFails(cvode_mem, &ncfl);
+  check_retval(&retval, "CVodeGetNumLinConvFails", 1);
+  retval = CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
 
   printf("\nFinal Statistics.. \n\n");
-  printf("lenrw   = %5ld     leniw   = %5ld\n", lenrw, leniw);
-  printf("lenrwLS = %5ld     leniwLS = %5ld\n", lenrwLS, leniwLS);
-  printf("nst     = %5ld\n"                  , nst);
+  printf("lenrw   = %5ld     leniw   = %5ld\n"  , lenrw, leniw);
+  printf("lenrwLS = %5ld     leniwLS = %5ld\n"  , lenrwLS, leniwLS);
+  printf("nst     = %5ld\n"                     , nst);
   printf("nfe     = %5ld     nfeLS   = %5ld\n"  , nfe, nfeLS);
   printf("nni     = %5ld     nli     = %5ld\n"  , nni, nli);
   printf("nsetups = %5ld     netf    = %5ld\n"  , nsetups, netf);

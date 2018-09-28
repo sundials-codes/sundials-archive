@@ -1,4 +1,14 @@
-C     ----------------------------------------------------------------
+C     --------------------------------------------------------------------
+C     LLNS Copyright Start
+C     Copyright (c) 2017, Lawrence Livermore National Security
+C     This work was performed under the auspices of the U.S. Department 
+C     of Energy by Lawrence Livermore National Laboratory in part under 
+C     Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+C     Produced at the Lawrence Livermore National Laboratory.
+C     All rights reserved.
+C     For details, see the LICENSE file.
+C     LLNS Copyright End
+C     --------------------------------------------------------------------
 C     FCVODE Example Problem: 2D kinetics-transport, precond. Krylov
 C     solver. 
 C     
@@ -25,7 +35,7 @@ C     using the FCVBP banded preconditioner.
 C     
 C     The second and third dimensions of U here must match the values
 C     of MX and MY, for consistency with the output statements below.
-C     ----------------------------------------------------------------
+C     --------------------------------------------------------------------
 C
       IMPLICIT NONE
 C
@@ -50,7 +60,7 @@ C
      1     JPRETYPE/1/, IGSTYPE/1/, MAXL/0/, DELT/0.0D0/
       DATA LLENRW/1/, LLENIW/2/, LNST/3/, LNFE/4/, LNETF/5/,  LNCF/6/,
      1     LNNI/7/, LNSETUP/8/, LQ/9/, LLENRWLS/13/, LLENIWLS/14/,
-     1     LNPE/18/, LNLI/20/, LNPS/19/, LNCFL/21/
+     1     LNPE/20/, LNLI/22/, LNPS/21/, LNCFL/23/
       DATA LH/2/
 C
 C     Load problem constants into IPAR, RPAR, and set initial values
@@ -99,11 +109,11 @@ C     Initialize CVODE
         STOP
       ENDIF
 C
-C     attach linear solver module to CVSpils interface
-      CALL FCVSPILSINIT(IER)
+C     attach linear solver module to CVLs interface
+      CALL FCVLSINIT(IER)
       IF (IER .NE. 0) THEN
         WRITE(6,40) IER
- 40     FORMAT(///' SUNDIALS_ERROR: FCVSPILSINIT returned IER = ',I5)
+ 40     FORMAT(///' SUNDIALS_ERROR: FCVLSINIT returned IER = ',I5)
         CALL FCVFREE
         STOP
       ENDIF

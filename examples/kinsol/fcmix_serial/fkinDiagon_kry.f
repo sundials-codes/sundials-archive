@@ -1,8 +1,18 @@
       program fkinDiagon_kry
-c     ----------------------------------------------------------------
+c     --------------------------------------------------------------------
 c     Programmer(s): Allan G. Taylor, Alan C. Hindmarsh and
 c                    Radu Serban @ LLNL
-c     ----------------------------------------------------------------
+c     --------------------------------------------------------------------
+c     LLNS Copyright Start
+c     Copyright (c) 2017, Lawrence Livermore National Security
+c     This work was performed under the auspices of the U.S. Department 
+c     of Energy by Lawrence Livermore National Laboratory in part under 
+c     Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+c     Produced at the Lawrence Livermore National Laboratory.
+c     All rights reserved.
+c     For details, see the LICENSE file.
+c     LLNS Copyright End
+c     --------------------------------------------------------------------
 c     Simple diagonal test with Fortran interface, using user-supplied
 c     preconditioner setup and solve routines (supplied in Fortran).
 c
@@ -14,14 +24,14 @@ c
 c     No scaling is done.
 c     An approximate diagonal preconditioner is used.
 c
-c     ----------------------------------------------------------------
+c     --------------------------------------------------------------------
 c
       implicit none
 
       integer PROBSIZE
       parameter(PROBSIZE=128)
 c The following declaration specification should match C type long int.
-      integer*8 neq, iout(15), msbpre
+      integer*8 neq, iout(16), msbpre
       integer ier, globalstrat, prectype, maxl, maxlrst, i
       double precision pp, fnormtol, scsteptol
       double precision rout(2), uu(PROBSIZE), scale(PROBSIZE)
@@ -116,10 +126,10 @@ c
 c
 c Attach SPGMR linear solver module to KINSOL
 c
-      call fkinspilsinit(ier)
+      call fkinlsinit(ier)
       if (ier .ne. 0) then
          write(6,1236) ier
- 1236    format('SUNDIALS_ERROR: FKINSPILSINIT returned IER = ', i4)
+ 1236    format('SUNDIALS_ERROR: FKINLSINIT returned IER = ', i4)
          call fkinfree
          stop
       endif
@@ -137,10 +147,10 @@ c
 c
 c Set preconditioner routines
 c
-      call fkinspilssetprec(1, ier)
+      call fkinlssetprec(1, ier)
       if (ier .ne. 0) then
          write(6,1238) ier
- 1238    format('SUNDIALS_ERROR: FKINSPILSSETPREC returned IER = ',
+ 1238    format('SUNDIALS_ERROR: FKINLSSETPREC returned IER = ',
      1          i4)
          call fkinfree
          stop
@@ -173,8 +183,8 @@ c
  1256    format(i4, 4(1x, f10.6))
  30   continue
 
-      write(6,1267) iout(3), iout(14), iout(4), iout(12), iout(13),
-     1              iout(15)
+      write(6,1267) iout(3), iout(15), iout(4), iout(13), iout(14),
+     1              iout(16)
  1267 format(//'Final statistics:'//
      1     '  nni = ', i3, ',  nli  = ', i3, /,
      2     '  nfe = ', i3, ',  npe  = ', i3, /,

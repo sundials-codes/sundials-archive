@@ -6,6 +6,20 @@
  * Based on work by Scott D. Cohen, Alan C. Hindmarsh, George Byrne,
  *                  and Radu Serban @ LLNL
  * -----------------------------------------------------------------
+ * LLNS/SMU Copyright Start
+ * Copyright (c) 2017, Southern Methodist University and 
+ * Lawrence Livermore National Security
+ *
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Southern Methodist University and Lawrence Livermore 
+ * National Laboratory under Contract DE-AC52-07NA27344.
+ * Produced at Southern Methodist University and the Lawrence 
+ * Livermore National Laboratory.
+ *
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS/SMU Copyright End
+ * -----------------------------------------------------------------
  * Example problem:
  *
  * The following is a simple example problem, with the program for
@@ -204,6 +218,7 @@ int main(int argc, char *argv[])
   N_VDestroy(u);              /* Free hypre vector wrapper */
   HYPRE_IJVectorDestroy(Uij); /* Free the underlying hypre vector */
   CVodeFree(&cvode_mem);      /* Free the integrator memory */
+  SUNNonlinSolFree(NLS);      /* Free the nonlinear solver */
   free(data);                 /* Free user data */
 
   MPI_Finalize();
@@ -371,7 +386,7 @@ static int f(realtype t, N_Vector u, N_Vector udot, void *user_data)
      opt == 0 means SUNDIALS function allocates memory so check if
               returned NULL pointer
      opt == 1 means SUNDIALS function returns an integer value so check if
-              retval >= 0
+              retval < 0
      opt == 2 means function allocates memory so check if returned
               NULL pointer */
 

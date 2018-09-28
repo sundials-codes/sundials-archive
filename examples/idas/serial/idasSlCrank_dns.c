@@ -1,6 +1,16 @@
 /* -----------------------------------------------------------------
  * Programmer: Radu Serban and Cosmin Petra @ LLNL
  * -----------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
+ * -----------------------------------------------------------------
  * Simulation of a slider-crank mechanism modelled with 3 generalized
  * coordinates: crank angle, connecting bar angle, and slider location.
  * The mechanism moves under the action of a constant horizontal force
@@ -72,8 +82,8 @@ static void force(N_Vector yy, realtype *Q, UserData data);
 /* Prototypes of private functions */
 static void PrintHeader(realtype rtol, realtype avtol, N_Vector y);
 static void PrintOutput(void *mem, realtype t, N_Vector y);
-static void PrintFinalStats(void *mem);
-static int check_flag(void *flagvalue, const char *funcname, int opt);
+static int PrintFinalStats(void *mem);
+static int check_retval(void *returnvalue, const char *funcname, int opt);
 
 /*
  *--------------------------------------------------------------------
@@ -88,7 +98,7 @@ int main(void)
   void *mem;
   N_Vector yy, yp, id, q;
   realtype tret, tout;
-  int flag;
+  int retval;
   SUNMatrix A;
   SUNLinearSolver LS;
 
@@ -123,29 +133,29 @@ int main(void)
 
   /* IDAS initialization */
   mem = IDACreate();
-  flag = IDAInit(mem, ressc, TBEGIN, yy, yp);
-  flag = IDASStolerances(mem, RTOLF, ATOLF);
-  flag = IDASetUserData(mem, data);
-  flag = IDASetId(mem, id);
-  flag = IDASetSuppressAlg(mem, SUNTRUE);
-  flag = IDASetMaxNumSteps(mem, 20000);
+  retval = IDAInit(mem, ressc, TBEGIN, yy, yp);
+  retval = IDASStolerances(mem, RTOLF, ATOLF);
+  retval = IDASetUserData(mem, data);
+  retval = IDASetId(mem, id);
+  retval = IDASetSuppressAlg(mem, SUNTRUE);
+  retval = IDASetMaxNumSteps(mem, 20000);
 
   /* Create dense SUNMatrix for use in linear solves */
   A = SUNDenseMatrix(NEQ, NEQ);
-  if(check_flag((void *)A, "SUNDenseMatrix", 0)) return(1);
+  if(check_retval((void *)A, "SUNDenseMatrix", 0)) return(1);
 
   /* Create dense SUNLinearSolver object */
-  LS = SUNDenseLinearSolver(yy, A);
-  if(check_flag((void *)LS, "SUNDenseLinearSolver", 0)) return(1);
+  LS = SUNLinSol_Dense(yy, A);
+  if(check_retval((void *)LS, "SUNLinSol_Dense", 0)) return(1);
 
   /* Attach the matrix and linear solver */
-  flag = IDADlsSetLinearSolver(mem, LS, A);
-  if(check_flag(&flag, "IDADlsSetLinearSolver", 1)) return(1);
+  retval = IDADlsSetLinearSolver(mem, LS, A);
+  if(check_retval(&retval, "IDADlsSetLinearSolver", 1)) return(1);
 
   N_VConst(ZERO, q);
-  flag = IDAQuadInit(mem, rhsQ, q);
-  flag = IDAQuadSStolerances(mem, RTOLQ, ATOLQ);
-  flag = IDASetQuadErrCon(mem, SUNTRUE);
+  retval = IDAQuadInit(mem, rhsQ, q);
+  retval = IDAQuadSStolerances(mem, RTOLQ, ATOLQ);
+  retval = IDASetQuadErrCon(mem, SUNTRUE);
 
   PrintHeader(RTOLF, ATOLF, yy);
 
@@ -157,8 +167,8 @@ int main(void)
 
   while (1) {
 
-    flag = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
-    if (check_flag(&flag, "IDASolve", 1)) return(1);
+    retval = IDASolve(mem, tout, &tret, yy, yp, IDA_NORMAL);
+    if (check_retval(&retval, "IDASolve", 1)) return(1);
 
     PrintOutput(mem,tret,yy);
 
@@ -167,7 +177,8 @@ int main(void)
     if (tret > TEND) break;
   }
 
-  PrintFinalStats(mem);
+  retval = PrintFinalStats(mem);
+  if (check_retval(&retval, "PrintFinalStats", 1)) return(1);
 
   IDAGetQuad(mem, &tret, q);
   printf("--------------------------------------------\n");
@@ -380,11 +391,11 @@ static void PrintOutput(void *mem, realtype t, N_Vector y)
   yval  = N_VGetArrayPointer_Serial(y);
 
   retval = IDAGetLastOrder(mem, &kused);
-  check_flag(&retval, "IDAGetLastOrder", 1);
+  check_retval(&retval, "IDAGetLastOrder", 1);
   retval = IDAGetNumSteps(mem, &nst);
-  check_flag(&retval, "IDAGetNumSteps", 1);
+  check_retval(&retval, "IDAGetNumSteps", 1);
   retval = IDAGetLastStep(mem, &hused);
-  check_flag(&retval, "IDAGetLastStep", 1);
+  check_retval(&retval, "IDAGetLastStep", 1);
 #if defined(SUNDIALS_EXTENDED_PRECISION)
   printf("%5.2Lf %12.4Le %12.4Le %12.4Le | %3ld  %1d %12.4Le\n", 
          t, yval[0], yval[1], yval[2], nst, kused, hused);
@@ -398,18 +409,18 @@ static void PrintOutput(void *mem, realtype t, N_Vector y)
 }
 
 
-static void PrintFinalStats(void *mem)
+static int PrintFinalStats(void *mem)
 {
-  int flag;
+  int retval;
   long int nst, nni, nje, nre, nreLS, netf, ncfn;
 
-  flag = IDAGetNumSteps(mem, &nst);
-  flag = IDAGetNumResEvals(mem, &nre);
-  flag = IDADlsGetNumJacEvals(mem, &nje);
-  flag = IDAGetNumNonlinSolvIters(mem, &nni);
-  flag = IDAGetNumErrTestFails(mem, &netf);
-  flag = IDAGetNumNonlinSolvConvFails(mem, &ncfn);
-  flag = IDADlsGetNumResEvals(mem, &nreLS);
+  retval = IDAGetNumSteps(mem, &nst);
+  retval = IDAGetNumResEvals(mem, &nre);
+  retval = IDADlsGetNumJacEvals(mem, &nje);
+  retval = IDAGetNumNonlinSolvIters(mem, &nni);
+  retval = IDAGetNumErrTestFails(mem, &netf);
+  retval = IDAGetNumNonlinSolvConvFails(mem, &ncfn);
+  retval = IDADlsGetNumResEvals(mem, &nreLS);
 
   printf("\nFinal Run Statistics: \n\n");
   printf("Number of steps                    = %ld\n", nst);
@@ -418,37 +429,39 @@ static void PrintFinalStats(void *mem)
   printf("Number of nonlinear iterations     = %ld\n", nni);
   printf("Number of error test failures      = %ld\n", netf);
   printf("Number of nonlinear conv. failures = %ld\n", ncfn);
+
+  return(retval);
 }
 
 /*
  * Check function return value...
  *   opt == 0 means SUNDIALS function allocates memory so check if
  *            returned NULL pointer
- *   opt == 1 means SUNDIALS function returns a flag so check if
- *            flag >= 0
+ *   opt == 1 means SUNDIALS function returns an integer value so check if
+ *            retval < 0
  *   opt == 2 means function allocates memory so check if returned
  *            NULL pointer 
  */
 
-static int check_flag(void *flagvalue, const char *funcname, int opt)
+static int check_retval(void *returnvalue, const char *funcname, int opt)
 {
-  int *errflag;
+  int *retval;
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
-  if (opt == 0 && flagvalue == NULL) {
+  if (opt == 0 && returnvalue == NULL) {
     fprintf(stderr, 
             "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n", 
             funcname);
     return(1);
   } else if (opt == 1) {
-    /* Check if flag < 0 */
-    errflag = (int *) flagvalue;
-    if (*errflag < 0) {
+    /* Check if retval < 0 */
+    retval = (int *) returnvalue;
+    if (*retval < 0) {
       fprintf(stderr, 
-              "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n", 
-              funcname, *errflag);
+              "\nSUNDIALS_ERROR: %s() failed with retval = %d\n\n", 
+              funcname, *retval);
       return(1); 
     }
-  } else if (opt == 2 && flagvalue == NULL) {
+  } else if (opt == 2 && returnvalue == NULL) {
     /* Check if function returned NULL pointer - no memory allocated */
     fprintf(stderr, 
             "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n", 

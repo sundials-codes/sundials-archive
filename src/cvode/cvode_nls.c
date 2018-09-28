@@ -80,6 +80,10 @@ int CVodeSetNonlinearSolver(void *cvode_mem, SUNNonlinearSolver NLS)
   /* set SUNNonlinearSolver pointer */
   cv_mem->NLS = NLS;
 
+  /* Set NLS ownership flag. If this function was called to attach the default
+     NLS, CVODE will set the flag to SUNTRUE after this function returns. */
+  cv_mem->ownNLS = SUNFALSE;
+
   /* set the nonlinear system function */
   if (SUNNonlinSolGetType(NLS) == SUNNONLINEARSOLVER_ROOTFIND) {
     retval = SUNNonlinSolSetSysFn(cv_mem->NLS, cvNlsResidual);
@@ -133,7 +137,7 @@ int cvNlsInit(CVodeMem cvode_mem)
     retval = SUNNonlinSolSetLSetupFn(cvode_mem->NLS, NULL);
 
   if (retval != CV_SUCCESS) {
-    cvProcessError(cvode_mem, CV_ILL_INPUT, "CVODE", "cvInitialSetup",
+    cvProcessError(cvode_mem, CV_ILL_INPUT, "CVODE", "cvNlsInit",
                    "Setting the linear solver setup function failed");
     return(CV_NLS_INIT_FAIL);
   }
@@ -145,7 +149,7 @@ int cvNlsInit(CVodeMem cvode_mem)
     retval = SUNNonlinSolSetLSolveFn(cvode_mem->NLS, NULL);
 
   if (retval != CV_SUCCESS) {
-    cvProcessError(cvode_mem, CV_ILL_INPUT, "CVODE", "cvInitialSetup",
+    cvProcessError(cvode_mem, CV_ILL_INPUT, "CVODE", "cvNlsInit",
                    "Setting linear solver solve function failed");
     return(CV_NLS_INIT_FAIL);
   }
@@ -154,7 +158,7 @@ int cvNlsInit(CVodeMem cvode_mem)
   retval = SUNNonlinSolInitialize(cvode_mem->NLS);
 
   if (retval != CV_SUCCESS) {
-    cvProcessError(cvode_mem, CV_ILL_INPUT, "CVODE", "cvInitialSetup",
+    cvProcessError(cvode_mem, CV_ILL_INPUT, "CVODE", "cvNlsInit",
                    MSGCV_NLS_INIT_FAIL);
     return(CV_NLS_INIT_FAIL);
   }
@@ -188,8 +192,9 @@ static int cvNlsLSetup(N_Vector ycor, N_Vector res, booleantype jbad,
   /* update Jacobian status */
   *jcur = cv_mem->cv_jcur;
 
-  cv_mem->cv_gamrat = cv_mem->cv_crate = ONE;
+  cv_mem->cv_gamrat = ONE;
   cv_mem->cv_gammap = cv_mem->cv_gamma;
+  cv_mem->cv_crate  = ONE;
   cv_mem->cv_nstlp  = cv_mem->cv_nst;
 
   if (retval < 0) return(CV_LSETUP_FAIL);
@@ -226,7 +231,6 @@ static int cvNlsConvTest(SUNNonlinearSolver NLS, N_Vector ycor, N_Vector delta,
   int m, retval;
   realtype del;
   realtype dcon;
-  static realtype delp;
 
   if (cvode_mem == NULL) {
     cvProcessError(NULL, CV_MEM_NULL, "CVODE", "cvNlsConvTest", MSGCV_NO_MEM);
@@ -244,20 +248,20 @@ static int cvNlsConvTest(SUNNonlinearSolver NLS, N_Vector ycor, N_Vector delta,
   /* Test for convergence. If m > 0, an estimate of the convergence
      rate constant is stored in crate, and used in the test.        */
   if (m > 0) {
-    cv_mem->cv_crate = SUNMAX(CRDOWN * cv_mem->cv_crate, del/delp);
+    cv_mem->cv_crate = SUNMAX(CRDOWN * cv_mem->cv_crate, del/cv_mem->cv_delp);
   }
   dcon = del * SUNMIN(ONE, cv_mem->cv_crate) / tol;
 
   if (dcon <= ONE) {
-    cv_mem->cv_acnrm = (m==0) ? del : N_VWrmsNorm(ycor, cv_mem->cv_ewt);
+    cv_mem->cv_acnrm = (m==0) ? del : N_VWrmsNorm(ycor, ewt);
     return(CV_SUCCESS); /* Nonlinear system was solved successfully */
   }
 
   /* check if the iteration seems to be diverging */
-  if ((m >= 1) && (del > RDIV*delp)) return(SUN_NLS_CONV_RECVR);
+  if ((m >= 1) && (del > RDIV*cv_mem->cv_delp)) return(SUN_NLS_CONV_RECVR);
 
   /* Save norm of correction and loop again */
-  delp = del;
+  cv_mem->cv_delp = del;
 
   /* Not yet converged */
   return(SUN_NLS_CONTINUE);

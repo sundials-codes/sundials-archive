@@ -1,6 +1,16 @@
 /* -----------------------------------------------------------------
  * Programmer(s): Radu Serban @ LLNL
  * -----------------------------------------------------------------
+ * LLNS Copyright Start
+ * Copyright (c) 2017, Lawrence Livermore National Security
+ * This work was performed under the auspices of the U.S. Department 
+ * of Energy by Lawrence Livermore National Laboratory in part under 
+ * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
+ * Produced at the Lawrence Livermore National Laboratory.
+ * All rights reserved.
+ * For details, see the LICENSE file.
+ * LLNS Copyright End
+ * -----------------------------------------------------------------
  * Example problem:
  * 
  * The following is a simple example problem, with the coding
@@ -28,7 +38,6 @@
 #include <nvector/nvector_serial.h>          /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_dense.h>       /* access to dense SUNMatrix            */
 #include <sunlinsol/sunlinsol_lapackdense.h> /* access to dense SUNLinearSolver      */
-#include <cvode/cvode_direct.h>              /* access to CVDls interface            */
 #include <sundials/sundials_types.h>         /* defs. of realtype, sunindextype      */
 
 /* User-defined vector and matrix accessor macros: Ith, IJth */
@@ -153,17 +162,17 @@ int main()
   A = SUNDenseMatrix(NEQ, NEQ);
   if(check_retval((void *)A, "SUNDenseMatrix", 0)) return(1);
 
-  /* Create SUNLapackDense solver object for use by CVode */
-  LS = SUNLapackDense(y, A);
-  if(check_retval((void *)LS, "SUNLapackDense", 0)) return(1);
+  /* Create SUNLinSol_LapackDense solver object for use by CVode */
+  LS = SUNLinSol_LapackDense(y, A);
+  if(check_retval((void *)LS, "SUNLinSol_LapackDense", 0)) return(1);
 
-  /* Call CVDlsSetLinearSolver to attach the matrix and linear solver to CVode */
-  retval = CVDlsSetLinearSolver(cvode_mem, LS, A);
-  if(check_retval(&retval, "CVDlsSetLinearSolver", 1)) return(1);
+  /* Call CVodeSetLinearSolver to attach the matrix and linear solver to CVode */
+  retval = CVodeSetLinearSolver(cvode_mem, LS, A);
+  if(check_retval(&retval, "CVodeSetLinearSolver", 1)) return(1);
 
   /* Set the user-supplied Jacobian routine Jac */
-  retval = CVDlsSetJacFn(cvode_mem, Jac);
-  if(check_retval(&retval, "CVDlsSetJacFn", 1)) return(1);
+  retval = CVodeSetJacFn(cvode_mem, Jac);
+  if(check_retval(&retval, "CVodeSetJacFn", 1)) return(1);
 
   /* In loop, call CVode, print results, and test for error.
      Break out of loop when NOUT preset output times have been reached.  */
@@ -321,10 +330,10 @@ static void PrintFinalStats(void *cvode_mem)
   retval = CVodeGetNumNonlinSolvConvFails(cvode_mem, &ncfn);
   check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  retval = CVDlsGetNumJacEvals(cvode_mem, &nje);
-  check_retval(&retval, "CVDlsGetNumJacEvals", 1);
-  retval = CVDlsGetNumRhsEvals(cvode_mem, &nfeLS);
-  check_retval(&retval, "CVDlsGetNumRhsEvals", 1);
+  retval = CVodeGetNumJacEvals(cvode_mem, &nje);
+  check_retval(&retval, "CVodeGetNumJacEvals", 1);
+  retval = CVodeGetNumLinRhsEvals(cvode_mem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
 
   retval = CVodeGetNumGEvals(cvode_mem, &nge);
   check_retval(&retval, "CVodeGetNumGEvals", 1);
@@ -341,7 +350,7 @@ static void PrintFinalStats(void *cvode_mem)
  *   opt == 0 means SUNDIALS function allocates memory so check if
  *            returned NULL pointer
  *   opt == 1 means SUNDIALS function returns an integer value so check if
- *            retval >= 0
+ *            retval < 0
  *   opt == 2 means function allocates memory so check if returned
  *            NULL pointer 
  */
