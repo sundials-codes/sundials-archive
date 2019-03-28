@@ -1,20 +1,25 @@
 # ------------------------------------------------------------------------------
 # Programmer(s): David J. Gardner @ LLNL
 # ------------------------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Lawrence Livermore National Laboratory in part under
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2019, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ------------------------------------------------------------------------------
 # CMakeLists.txt file for the Newton SUNNonlinearSolver library
 # ------------------------------------------------------------------------------
 
 install(CODE "MESSAGE(\"\nInstall SUNNONLINSOL_NEWTON\n\")")
+
+# Add F90 module if F2003 interface is enabled
+if(F90_FOUND AND F2003_INTERFACE_ENABLE)
+  add_subdirectory(F90)
+endif(F90_FOUND AND F2003_INTERFACE_ENABLE)
 
 # Add variable with the sources for the library
 set(lib_SOURCES sunnonlinsol_newton.c)
@@ -35,7 +40,7 @@ set(lib_HEADERS
 # Add source directory to include directories
 include_directories(.)
 
-# Define C preprocessor flag -DBUILD_SUNDIALS_LIBRARY 
+# Define C preprocessor flag -DBUILD_SUNDIALS_LIBRARY
 add_definitions(-DBUILD_SUNDIALS_LIBRARY)
 
 # Rules for building and installing the static library:
@@ -46,7 +51,7 @@ if(BUILD_STATIC_LIBS)
   add_library(sundials_sunnonlinsolnewton_static STATIC ${lib_SOURCES} ${shared_SOURCES})
   set_target_properties(sundials_sunnonlinsolnewton_static
     PROPERTIES OUTPUT_NAME sundials_sunnonlinsolnewton CLEAN_DIRECT_OUTPUT 1)
-  install(TARGETS sundials_sunnonlinsolnewton_static DESTINATION lib)
+  install(TARGETS sundials_sunnonlinsolnewton_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 # Rules for building and installing the shared library:
@@ -65,14 +70,14 @@ if(BUILD_SHARED_LIBS)
     PROPERTIES OUTPUT_NAME sundials_sunnonlinsolnewton CLEAN_DIRECT_OUTPUT 1)
   set_target_properties(sundials_sunnonlinsolnewton_shared
     PROPERTIES VERSION ${sunnonlinsollib_VERSION} SOVERSION ${sunnonlinsollib_SOVERSION})
-  install(TARGETS sundials_sunnonlinsolnewton_shared DESTINATION lib)
+  install(TARGETS sundials_sunnonlinsolnewton_shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 # Install the header files
 INSTALL(FILES ${lib_HEADERS} DESTINATION include/sunnonlinsol)
 
 # If FCMIX is enabled, build and install the F library
-if(FCMIX_ENABLE AND F77_FOUND)
+if(F77_INTERFACE_ENABLE AND F77_FOUND)
 
   set(flib_SOURCES fsunnonlinsol_newton.c)
 
@@ -80,7 +85,7 @@ if(FCMIX_ENABLE AND F77_FOUND)
     add_library(sundials_fsunnonlinsolnewton_static STATIC ${flib_SOURCES})
     set_target_properties(sundials_fsunnonlinsolnewton_static
       PROPERTIES OUTPUT_NAME sundials_fsunnonlinsolnewton CLEAN_DIRECT_OUTPUT 1)
-    install(TARGETS sundials_fsunnonlinsolnewton_static DESTINATION lib)
+    install(TARGETS sundials_fsunnonlinsolnewton_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
 
   if(BUILD_SHARED_LIBS)
@@ -95,7 +100,7 @@ if(FCMIX_ENABLE AND F77_FOUND)
       PROPERTIES OUTPUT_NAME sundials_fsunnonlinsolnewton CLEAN_DIRECT_OUTPUT 1)
     set_target_properties(sundials_fsunnonlinsolnewton_shared
       PROPERTIES VERSION ${sunnonlinsollib_VERSION} SOVERSION ${sunnonlinsollib_SOVERSION})
-    install(TARGETS sundials_fsunnonlinsolnewton_shared DESTINATION lib)
+    install(TARGETS sundials_fsunnonlinsolnewton_shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
 
 endif()

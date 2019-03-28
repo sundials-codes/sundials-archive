@@ -2,19 +2,15 @@
  * Programmer(s): Daniel R. Reynolds @ SMU
  *                David J. Gardner, Radu Serban and Aaron Collier @ LLNL
  *-----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2018, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *-----------------------------------------------------------------
  * Implementation header file for KINSOL's linear solver interface.
  *-----------------------------------------------------------------*/
@@ -40,8 +36,8 @@ extern "C" {
 /*------------------------------------------------------------------
   Types : struct KINLsMemRec, struct *KINLsMem
 
-  The type KINLsMem is a pointer to a KINLsMemRec, which is a 
-  structure containing fields that must be accessible by LS module 
+  The type KINLsMem is a pointer to a KINLsMemRec, which is a
+  structure containing fields that must be accessible by LS module
   routines.
   ------------------------------------------------------------------*/
 typedef struct KINLsMemRec {
@@ -57,10 +53,10 @@ typedef struct KINLsMemRec {
 
   /* Solver tolerance adjustment factor (if needed, see kinLsSolve)     */
   realtype tol_fac;
-  
+
   /* Statistics and associated parameters */
   long int nje;        /* no. of calls to jac                           */
-  long int nfeDQ;      /* no. of calls to F due to DQ Jacobian or J*v 
+  long int nfeDQ;      /* no. of calls to F due to DQ Jacobian or J*v
                           approximations                                */
   long int npe;        /* npe = total number of precond calls           */
   long int nli;        /* nli = total number of linear iterations       */
@@ -68,8 +64,8 @@ typedef struct KINLsMemRec {
   long int ncfl;       /* ncfl = total number of convergence failures   */
   long int njtimes;    /* njtimes = total number of calls to jtimes     */
 
-  booleantype new_uu;  /* flag indicating if the iterate has been 
-                          updated - the Jacobian must be updated or 
+  booleantype new_uu;  /* flag indicating if the iterate has been
+                          updated - the Jacobian must be updated or
                           reevaluated (meant to be used by a
                           user-supplied jtimes function                 */
 

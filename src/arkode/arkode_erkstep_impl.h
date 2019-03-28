@@ -1,19 +1,15 @@
 /*---------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  *---------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2018, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *---------------------------------------------------------------
  * Implementation header file for ARKode's ERK time stepper
  * module.
@@ -45,7 +41,7 @@ extern "C" {
   ---------------------------------------------------------------
   The type ARKodeERKStepMem is type pointer to struct
   ARKodeERKStepMemRec.  This structure contains fields to
-  perform an additive Runge-Kutta time step.
+  perform an explicit Runge-Kutta time step.
   ---------------------------------------------------------------*/
 typedef struct ARKodeERKStepMemRec {
 
@@ -87,6 +83,8 @@ int erkStep_FullRHS(void* arkode_mem, realtype t,
 int erkStep_TakeStep(void* arkode_mem);
 
 /* Internal utility routines */
+int erkStep_AccessStepMem(void* arkode_mem, const char *fname,
+                          ARKodeMem *ark_mem, ARKodeERKStepMem *step_mem);
 booleantype erkStep_CheckNVector(N_Vector tmpl);
 int erkStep_SetButcherTable(ARKodeMem ark_mem);
 int erkStep_CheckButcherTable(ARKodeMem ark_mem);

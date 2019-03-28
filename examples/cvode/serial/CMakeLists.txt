@@ -2,15 +2,15 @@
 # Programmer(s): Radu Serban @ LLNL
 #                David J. Gardner @ LLNL
 # ---------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Lawrence Livermore National Laboratory in part under
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2019, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # CMakeLists.txt file for CVODE serial examples
 # ---------------------------------------------------------------
@@ -20,6 +20,10 @@
 
 # Examples using SUNDIALS linear solvers
 SET(CVODE_examples
+  "cvRoberts_dns\;"
+  "cvRoberts_dns_uw\;develop"
+  "cvRoberts_dns_negsol\;develop"
+  "cvRoberts_dns_constraints\;develop"
   "cvAdvDiff_bnd\;develop"
   "cvDirectDemo_ls\;develop"
   "cvDiurnal_kry_bp\;develop"
@@ -27,10 +31,6 @@ SET(CVODE_examples
   "cvDisc_dns\;develop"
   "cvKrylovDemo_ls\;develop"
   "cvKrylovDemo_prec\;develop"
-  "cvRoberts_dns\;"
-  "cvRoberts_dns_uw\;develop"
-  "cvRoberts_dns_negsol\;develop"
-  "cvRoberts_dns_constraints\;develop"
   #cvAdvDiffReac_kry\;develop" # not released
   )
 

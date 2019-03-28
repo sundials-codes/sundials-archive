@@ -1,15 +1,15 @@
 /* -----------------------------------------------------------------
  * Programmer(s): Radu Serban @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2017, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Adjoint sensitivity example problem:
  *
@@ -26,7 +26,7 @@
  * central differencing, and with boundary values eliminated,
  * leaving an ODE system of size NEQ = MX*MY.
  * This program solves the problem with the BDF method, Newton
- * iteration with the SUNBAND linear solver, and a user-supplied
+ * iteration with the BAND linear solver, and a user-supplied
  * Jacobian routine.
  * It uses scalar relative and absolute tolerances.
  * Output is printed at t = .1, .2, ..., 1.
@@ -55,7 +55,6 @@
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunmatrix/sunmatrix_band.h>  /* access to band SUNMatrix             */
 #include <sunlinsol/sunlinsol_band.h>  /* access to band SUNLinearSolver       */
-#include <cvodes/cvodes_direct.h>      /* access to CVDls interface            */
 #include <sundials/sundials_types.h>   /* definition of type realtype          */
 #include <sundials/sundials_math.h>    /* definition of SUNRabs and SUNRexp    */
 
@@ -186,7 +185,7 @@ int main(int argc, char *argv[])
   if(check_retval(&retval, "CVodeSStolerances", 1)) return(1);
 
   /* Create banded SUNMatrix for the forward problem */
-  A = SUNBandMatrix(NEQ, MY, MY, 2*MY);
+  A = SUNBandMatrix(NEQ, MY, MY);
   if(check_retval((void *)A, "SUNBandMatrix", 0)) return(1);
 
   /* Create banded SUNLinearSolver for the forward problem */
@@ -194,12 +193,12 @@ int main(int argc, char *argv[])
   if(check_retval((void *)LS, "SUNLinSol_Band", 0)) return(1);
 
   /* Attach the matrix and linear solver */
-  retval = CVDlsSetLinearSolver(cvode_mem, LS, A);
-  if(check_retval(&retval, "CVDlsSetLinearSolver", 1)) return(1);
+  retval = CVodeSetLinearSolver(cvode_mem, LS, A);
+  if(check_retval(&retval, "CVodeSetLinearSolver", 1)) return(1);
 
   /* Set the user-supplied Jacobian routine for the forward problem */
-  retval = CVDlsSetJacFn(cvode_mem, Jac);
-  if(check_retval(&retval, "CVDlsSetJacFn", 1)) return(1);
+  retval = CVodeSetJacFn(cvode_mem, Jac);
+  if(check_retval(&retval, "CVodeSetJacFn", 1)) return(1);
 
   /* Allocate global memory */
 
@@ -242,7 +241,7 @@ int main(int argc, char *argv[])
   if(check_retval(&retval, "CVodeSStolerancesB", 1)) return(1);
  
   /* Create banded SUNMatrix for the backward problem */
-  AB = SUNBandMatrix(NEQ, MY, MY, 2*MY);
+  AB = SUNBandMatrix(NEQ, MY, MY);
   if(check_retval((void *)AB, "SUNBandMatrix", 0)) return(1);
 
   /* Create banded SUNLinearSolver for the backward problem */
@@ -250,12 +249,12 @@ int main(int argc, char *argv[])
   if(check_retval((void *)LSB, "SUNLinSol_Band", 0)) return(1);
 
   /* Attach the matrix and linear solver */
-  retval = CVDlsSetLinearSolverB(cvode_mem, indexB, LSB, AB);
-  if(check_retval(&retval, "CVDlsSetLinearSolverB", 1)) return(1);
+  retval = CVodeSetLinearSolverB(cvode_mem, indexB, LSB, AB);
+  if(check_retval(&retval, "CVodeSetLinearSolverB", 1)) return(1);
 
   /* Set the user-supplied Jacobian routine for the backward problem */
-  retval = CVDlsSetJacFnB(cvode_mem, indexB, JacB);
-  if(check_retval(&retval, "CVDlsSetJacFn", 1)) return(1);
+  retval = CVodeSetJacFnB(cvode_mem, indexB, JacB);
+  if(check_retval(&retval, "CVodeSetJacFnB", 1)) return(1);
 
   /* Perform backward integration */
   printf("\nBackward integration\n");

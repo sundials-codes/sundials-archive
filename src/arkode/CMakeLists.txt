@@ -1,19 +1,15 @@
 # ---------------------------------------------------------------
 # Programmer:  Daniel R. Reynolds @ SMU
 # ---------------------------------------------------------------
-# LLNS/SMU Copyright Start
-# Copyright (c) 2017, Southern Methodist University and
-# Lawrence Livermore National Security
-#
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Southern Methodist University and Lawrence Livermore
-# National Laboratory under Contract DE-AC52-07NA27344.
-# Produced at Southern Methodist University and the Lawrence
-# Livermore National Laboratory.
-#
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2019, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS/SMU Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # CMakeLists.txt file for the ARKODE library
 
@@ -36,6 +32,8 @@ SET(arkode_SOURCES
   arkode_interp.c
   arkode_io.c
   arkode_ls.c
+  arkode_mristep.c
+  arkode_mristep_io.c
   arkode_root.c
   )
 
@@ -53,27 +51,27 @@ SET(shared_SOURCES
   ${sundials_SOURCE_DIR}/src/sundials/sundials_iterative.c
   ${sundials_SOURCE_DIR}/src/sundials/sundials_version.c
   ${sundials_SOURCE_DIR}/src/sundials/sundials_nvector_senswrapper.c
-  ${sundials_SOURCE_DIR}/src/nvec_ser/nvector_serial.c
+  ${sundials_SOURCE_DIR}/src/nvector/serial/nvector_serial.c
   )
 
 # Add variable sunmatrix_SOURCES with the common SUNMatrix sources which will
 # also be included in the ARKODE library
 SET(sunmatrix_SOURCES
-  ${sundials_SOURCE_DIR}/src/sunmat_band/sunmatrix_band.c
-  ${sundials_SOURCE_DIR}/src/sunmat_dense/sunmatrix_dense.c
-  ${sundials_SOURCE_DIR}/src/sunmat_sparse/sunmatrix_sparse.c
+  ${sundials_SOURCE_DIR}/src/sunmatrix/band/sunmatrix_band.c
+  ${sundials_SOURCE_DIR}/src/sunmatrix/dense/sunmatrix_dense.c
+  ${sundials_SOURCE_DIR}/src/sunmatrix/sparse/sunmatrix_sparse.c
   )
 
 # Add variable sunlinsol_SOURCES with the common SUNLinearSolver sources which will
 # also be included in the ARKODE library
 SET(sunlinsol_SOURCES
-  ${sundials_SOURCE_DIR}/src/sunlinsol_band/sunlinsol_band.c
-  ${sundials_SOURCE_DIR}/src/sunlinsol_dense/sunlinsol_dense.c
-  ${sundials_SOURCE_DIR}/src/sunlinsol_spbcgs/sunlinsol_spbcgs.c
-  ${sundials_SOURCE_DIR}/src/sunlinsol_spfgmr/sunlinsol_spfgmr.c
-  ${sundials_SOURCE_DIR}/src/sunlinsol_spgmr/sunlinsol_spgmr.c
-  ${sundials_SOURCE_DIR}/src/sunlinsol_sptfqmr/sunlinsol_sptfqmr.c
-  ${sundials_SOURCE_DIR}/src/sunlinsol_pcg/sunlinsol_pcg.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/band/sunlinsol_band.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/dense/sunlinsol_dense.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/spbcgs/sunlinsol_spbcgs.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/spfgmr/sunlinsol_spfgmr.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/spgmr/sunlinsol_spgmr.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/sptfqmr/sunlinsol_sptfqmr.c
+  ${sundials_SOURCE_DIR}/src/sunlinsol/pcg/sunlinsol_pcg.c
   )
 
 # Add variable sunnonlinsol_SOURCES with the common SUNNonlinearSolver sources which will
@@ -94,6 +92,7 @@ SET(arkode_HEADERS
   arkode_butcher_dirk.h
   arkode_erkstep.h
   arkode_ls.h
+  arkode_mristep.h
   )
 
 # Add prefix with complete path to the ARKODE header files
@@ -119,7 +118,7 @@ IF(BUILD_STATIC_LIBS)
     PROPERTIES OUTPUT_NAME sundials_arkode CLEAN_DIRECT_OUTPUT 1)
 
   # Install the ARKODE library
-  INSTALL(TARGETS sundials_arkode_static DESTINATION lib)
+  INSTALL(TARGETS sundials_arkode_static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ENDIF(BUILD_STATIC_LIBS)
 
@@ -143,15 +142,12 @@ IF(BUILD_SHARED_LIBS)
     PROPERTIES VERSION ${arkodelib_VERSION} SOVERSION ${arkodelib_SOVERSION})
 
   # Install the ARKODE library
-  INSTALL(TARGETS sundials_arkode_shared DESTINATION lib)
+  INSTALL(TARGETS sundials_arkode_shared DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ENDIF(BUILD_SHARED_LIBS)
 
 # Install the ARKODE header files
 INSTALL(FILES ${arkode_HEADERS} DESTINATION include/arkode)
-
-# Install the ARKODE implementation header file
-INSTALL(FILES arkode_impl.h DESTINATION include/arkode)
 
 #
 MESSAGE(STATUS "Added ARKODE module")

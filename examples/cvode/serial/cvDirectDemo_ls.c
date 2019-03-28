@@ -2,15 +2,15 @@
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh and
  *                Radu Serban @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2017, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Demonstration program for CVODE - direct linear solvers.
  * Two separate problems are solved using both the CV_ADAMS and CV_BDF
@@ -763,7 +763,7 @@ static int PrepareNextRun(void *cvode_mem, int lmm, int miter, N_Vector y,
       printf("Band, User-Supplied Jacobian\n");
 
       /* Create band SUNMatrix for use in linear solves */
-      *A = SUNBandMatrix(P2_NEQ, mu, ml, mu+ml);
+      *A = SUNBandMatrix(P2_NEQ, mu, ml);
       if(check_retval((void *)*A, "SUNBandMatrix", 0)) return(1);
 
       /* Create banded SUNLinearSolver object for use by CVode */
@@ -783,7 +783,7 @@ static int PrepareNextRun(void *cvode_mem, int lmm, int miter, N_Vector y,
       printf("Band, Difference Quotient Jacobian\n");
 
       /* Create band SUNMatrix for use in linear solves */
-      *A = SUNBandMatrix(P2_NEQ, mu, ml, mu+ml);
+      *A = SUNBandMatrix(P2_NEQ, mu, ml);
       if(check_retval((void *)*A, "SUNBandMatrix", 0)) return(1);
 
       /* Create banded SUNLinearSolver object for use by CVode */

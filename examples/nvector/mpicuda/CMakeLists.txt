@@ -1,15 +1,15 @@
 # ---------------------------------------------------------------
 # Programmer:  Slaven Peles @ LLNL
 # ---------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Lawrence Livermore National Laboratory in part under
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2019, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # CMakeLists.txt file for CUDA nvector examples
 # ---------------------------------------------------------------
@@ -17,12 +17,10 @@
 # Example lists are tuples "name\;args\;nodes\;tasks\;type" where the
 # type is develop for examples excluded from 'make test' in releases
 
-# Examples using SUNDIALS cuda nvector
+# Examples using SUNDIALS MPI+cuda nvector
 SET(nvector_cuda_examples
-  "test_nvector_mpicuda\;\;\;\;"          # run sequentially
-  "test_nvector_mpicuda\;1000 0\;\;\;"    # run sequentially with arguments
-  "test_nvector_mpicuda\;\;1\;4\;"        # run parallel on 4 procs
-  "test_nvector_mpicuda\;1000 0\;1\;4\;"  # run parallel on 4 procs with arguments
+  "test_nvector_mpicuda\;1000 0\;\;\;"    # run sequentially
+  "test_nvector_mpicuda\;1000 0\;1\;4\;"  # run parallel on 4
   )
 
 # Dependencies for nvector examples

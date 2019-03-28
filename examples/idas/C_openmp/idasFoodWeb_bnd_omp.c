@@ -3,19 +3,15 @@
  * Programmer(s): Daniel R. Reynolds and Ting Yan @ SMU
  *      Based on idaFoodWeb_bnd.c and parallelized with OpenMP
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Example program for IDAS: Food web problem.
  *
@@ -114,7 +110,6 @@
 #include <math.h>
 
 #include <idas/idas.h>
-#include <idas/idas_direct.h>
 #include <sunmatrix/sunmatrix_band.h>
 #include <sunlinsol/sunlinsol_band.h>
 #include <nvector/nvector_openmp.h>
@@ -208,7 +203,7 @@ int main(int argc, char *argv[])
   UserData webdata;
   N_Vector cc, cp, id;
   int iout, retval;
-  sunindextype mu, ml, smu;
+  sunindextype mu, ml;
   realtype rtol, atol, t0, tout, tret;
   int num_threads;
 
@@ -274,13 +269,12 @@ int main(int argc, char *argv[])
   /* Setup band matrix and linear solver, and attach to IDA. */
 
   mu = ml = NSMX;
-  smu = mu+ml;
-  A = SUNBandMatrix(NEQ, mu, ml, smu);
+  A = SUNBandMatrix(NEQ, mu, ml);
   if(check_retval((void *)A, "SUNBandMatrix", 0)) return(1);
   LS = SUNLinSol_Band(cc, A);
   if(check_retval((void *)LS, "SUNLinSol_Band", 0)) return(1);
-  retval = IDADlsSetLinearSolver(ida_mem, LS, A);
-  if(check_retval(&retval, "IDADlsSetLinearSolver", 1)) return(1);
+  retval = IDASetLinearSolver(ida_mem, LS, A);
+  if(check_retval(&retval, "IDASetLinearSolver", 1)) return(1);
 
   /* Call IDACalcIC (with default options) to correct the initial values. */
 
@@ -583,10 +577,10 @@ static void PrintFinalStats(void *ida_mem)
   check_retval(&retval, "IDAGetNumErrTestFails", 1);
   retval = IDAGetNumNonlinSolvConvFails(ida_mem, &ncfn);
   check_retval(&retval, "IDAGetNumNonlinSolvConvFails", 1);
-  retval = IDADlsGetNumJacEvals(ida_mem, &nje);
-  check_retval(&retval, "IDADlsGetNumJacEvals", 1);
-  retval = IDADlsGetNumResEvals(ida_mem, &nreLS);
-  check_retval(&retval, "IDADlsGetNumResEvals", 1);
+  retval = IDAGetNumJacEvals(ida_mem, &nje);
+  check_retval(&retval, "IDAGetNumJacEvals", 1);
+  retval = IDAGetNumLinResEvals(ida_mem, &nreLS);
+  check_retval(&retval, "IDAGetNumLinResEvals", 1);
 
   printf("-----------------------------------------------------------\n");
   printf("Final run statistics: \n\n");

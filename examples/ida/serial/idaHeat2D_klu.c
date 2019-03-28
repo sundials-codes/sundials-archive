@@ -2,15 +2,15 @@
  * Programmer(s): Chris Nguyen @ LLNL
  *                based on idaHeat2D_bnd.c and idaRoberts_klu.c
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2017, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Example problem for IDA: 2D heat equation, serial, sparse.
  *
@@ -346,7 +346,6 @@ int jacHeat(realtype tt,  realtype cj,
             SUNMatrix JJ, void *user_data,
             N_Vector tempv1, N_Vector tempv2, N_Vector tempv3)
 {
-  realtype *yval;
   realtype dx =  ONE/(MGRID - ONE);
   realtype beta = RCONST(4.0)/(dx*dx) + cj;
   int i,j, repeat=0;
@@ -354,8 +353,6 @@ int jacHeat(realtype tt,  realtype cj,
   sunindextype *colptrs = SUNSparseMatrix_IndexPointers(JJ);
   sunindextype *rowvals = SUNSparseMatrix_IndexValues(JJ);
   realtype *data = SUNSparseMatrix_Data(JJ);
-
-  yval = N_VGetArrayPointer(yy);
 
   SUNMatZero(JJ);
 

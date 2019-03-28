@@ -1,15 +1,15 @@
 # ---------------------------------------------------------------
 # Programmer:  David J. Gardner @ LLNL
 # ---------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department 
-# of Energy by Lawrence Livermore National Laboratory in part under 
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2019, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # xSDK specific CMake variables. If set, these variables will 
 # overwrite the value in equivalent SUNDIALS CMake variable.
@@ -31,7 +31,6 @@ OPTION(USE_XSDK_DEFAULTS "Enable default xSDK settings" OFF)
 # ---------------------------------------------------------------
 
 IF(USE_XSDK_DEFAULTS)
-
   MESSAGE("Enabeling xSDK defaults")
   
   # set the CMake build type, SUNDIALS does not set a build type by default
@@ -47,7 +46,7 @@ IF(USE_XSDK_DEFAULTS)
   # set build index size, SUNDIALS_INDEX_SIZE defaults to int64_t
   SHOW_VARIABLE(XSDK_INDEX_SIZE STRING "32 or 64" "32")
 
-  # disable Fortran-C interface, FCMIX defaults to OFF
+  # disable Fortran-C interface, defaults to OFF
   SHOW_VARIABLE(XSDK_ENABLE_FORTRAN BOOL "Enable Fortran-C support" OFF)
 
   # disable CUDA by default
@@ -71,8 +70,12 @@ IF(USE_XSDK_DEFAULTS)
   # disable hypre by default
   SHOW_VARIABLE(TPL_ENABLE_HYPRE BOOL "Enable hypre support" OFF)
 
+  # disable Trilinos by default
+  SHOW_VARIABLE(TPL_ENABLE_TRILINOS BOOL "Enable Trilinos support" OFF)
+
   # disable RAJA by default
   # SHOW_VARIABLE(TPL_ENABLE_RAJA BOOL "Enable RAJA support" OFF)
+
 ENDIF()
 
 # ---------------------------------------------------------------
@@ -105,9 +108,9 @@ IF(XSDK_INDEX_SIZE)
   MARK_AS_ADVANCED(FORCE SUNDIALS_INDEX_SIZE)
 ENDIF()
 
-# XSDK_FORTRAN_ENABLE => FCMIX_ENABLE
+# XSDK_FORTRAN_ENABLE => F77_INTERFACE_ENABLE/F2003_INTERFACE_ENABLE
 IF(DEFINED XSDK_ENABLE_FORTRAN)
-  MESSAGE("Replacing FCMIX_ENABLE with XSDK_ENABLE_FORTRAN")
+  MESSAGE("Replacing F77_INTERFACE_ENABLE and F2003_INTERFACE_ENABLE with XSDK_ENABLE_FORTRAN")
   SET(DOCSTR "Enable Fortran-C support")
   
   # check that at least one solver with a Fortran interface is built
@@ -117,12 +120,16 @@ IF(DEFINED XSDK_ENABLE_FORTRAN)
                     "Disabeling XSDK_ENABLE_FORTRAN")
       FORCE_VARIABLE(XSDK_ENABLE_FORTRAN BOOL "${DOCSTR}" OFF)
     ENDIF()
-    HIDE_VARIABLE(FCMIX_ENABLE)
+    HIDE_VARIABLE(F77_INTERFACE_ENABLE)
+    HIDE_VARIABLE(F2003_INTERFACE_ENABLE)
     HIDE_VARIABLE(XSDK_ENABLE_FORTRAN)
   ENDIF()
 
-  FORCE_VARIABLE(FCMIX_ENABLE BOOL "${DOCSTR}" "${XSDK_ENABLE_FORTRAN}")
-  MARK_AS_ADVANCED(FORCE FCMIX_ENABLE)
+  FORCE_VARIABLE(F77_INTERFACE_ENABLE BOOL "${DOCSTR}" "${XSDK_ENABLE_FORTRAN}")
+  MARK_AS_ADVANCED(FORCE F77_INTERFACE_ENABLE)
+  
+  FORCE_VARIABLE(F2003_INTERFACE_ENABLE BOOL "${DOCSTR}" "${XSDK_ENABLE_FORTRAN}")
+  MARK_AS_ADVANCED(FORCE F2003_INTERFACE_ENABLE)
 ENDIF()
 
 # XSDK_ENABLE_CUDA => CUDA_ENABLE
@@ -220,7 +227,6 @@ IF(TPL_ENABLE_SUPERLUMT)
   FORCE_VARIABLE(SUPERLUMT_THREAD_TYPE STRING "${DOCSTR}" "${TPL_SUPERLUMT_THREAD_TYPE}")
   MARK_AS_ADVANCED(FORCE SUPERLUMT_THREAD_TYPE)
 ENDIF()
-
 
 # ---------------------------------------------------------------
 # KLU
@@ -321,6 +327,18 @@ IF(TPL_ENABLE_PETSC)
 ENDIF()
 
 # ---------------------------------------------------------------
+# Trilinos
+# ---------------------------------------------------------------
+
+# TPL_ENABLE_TRILINOS => Trilinos_ENABLE
+IF(DEFINED TPL_ENABLE_TRILINOS)
+  MESSAGE("Replacing Trilinos_ENABLE with TPL_ENABLE_TRILINOS")
+  SET(DOCSTR "Enable Trilinos support")
+
+  FORCE_VARIABLE(Trilinos_ENABLE BOOL "${DOCSTR}" "${TPL_ENABLE_TRILINOS}")
+  MARK_AS_ADVANCED(FORCE Trilinos_ENABLE)
+ENDIF()
+
 # RAJA
 # ---------------------------------------------------------------
 

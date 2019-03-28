@@ -1,15 +1,15 @@
 /* -----------------------------------------------------------------
  * Programmer(s): Radu Serban @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2017, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This program solves a stiff ODE system that arises from a system
  * of partial differential equations. The PDE system is a food web
@@ -94,7 +94,6 @@
 #include <cvodes/cvodes.h>             /* main integrator header file          */
 #include <nvector/nvector_serial.h>    /* access to serial N_Vector            */
 #include <sunlinsol/sunlinsol_spgmr.h> /* access to SPGMR SUNLinearSolver      */
-#include <cvodes/cvodes_spils.h>       /* access to CVSpils interface          */
 #include <sundials/sundials_dense.h>   /* use generic dense solver in precond. */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
 #include <sundials/sundials_math.h>    /* contains the macros ABS, SUNSQR, EXP */
@@ -280,12 +279,12 @@ int main(int argc, char *argv[])
   if(check_retval((void *)LS, "SUNLinSol_SPGMR", 0)) return(1);
 
   /* Attach the linear sovler */
-  retval = CVSpilsSetLinearSolver(cvode_mem, LS);
-  if (check_retval(&retval, "CVSpilsSetLinearSolver", 1)) return 1;
+  retval = CVodeSetLinearSolver(cvode_mem, LS, NULL);
+  if (check_retval(&retval, "CVodeSetLinearSolver", 1)) return 1;
 
   /* Set the preconditioner solve and setup functions */
-  retval = CVSpilsSetPreconditioner(cvode_mem, Precond, PSolve);
-  if(check_retval(&retval, "CVSpilsSetPreconditioner", 1)) return(1);
+  retval = CVodeSetPreconditioner(cvode_mem, Precond, PSolve);
+  if(check_retval(&retval, "CVodeSetPreconditioner", 1)) return(1);
 
   /* Set-up adjoint calculations */
 
@@ -338,12 +337,12 @@ int main(int argc, char *argv[])
   if(check_retval((void *)LSB, "SUNLinSol_SPGMR", 0)) return(1);
 
   /* Attach the linear sovler */
-  retval = CVSpilsSetLinearSolverB(cvode_mem, indexB, LSB);
-  if (check_retval(&retval, "CVSpilsSetLinearSolverB", 1)) return 1;
+  retval = CVodeSetLinearSolverB(cvode_mem, indexB, LSB, NULL);
+  if (check_retval(&retval, "CVodeSetLinearSolverB", 1)) return 1;
 
   /* Set the preconditioner solve and setup functions */
-  retval = CVSpilsSetPreconditionerB(cvode_mem, indexB, PrecondB, PSolveB);
-  if(check_retval(&retval, "CVSpilsSetPreconditionerB", 1)) return(1);
+  retval = CVodeSetPreconditionerB(cvode_mem, indexB, PrecondB, PSolveB);
+  if(check_retval(&retval, "CVodeSetPreconditionerB", 1)) return(1);
 
   /* Perform backward integration */
 
@@ -744,7 +743,7 @@ static int PrecondB(realtype t, N_Vector c,
    for (ig = 0; ig < ngrp; ig++) {
      denseAddIdentity(P[ig], mp);
      denseretval = denseGETRF(P[ig], mp, mp, pivot[ig]);
-     if (retval != 0) return(1);
+     if (denseretval != 0) return(1);
    }
 
   *jcurPtr = SUNTRUE;

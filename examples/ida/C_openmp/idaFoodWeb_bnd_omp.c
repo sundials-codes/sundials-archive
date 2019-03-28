@@ -3,19 +3,15 @@
  * Programmer(s): Daniel R. Reynolds and Ting Yan @ SMU
  *      Based on idaFoodWeb_bnd.c and parallelized with OpenMP
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Example program for IDA: Food web problem.
  *
@@ -207,7 +203,7 @@ int main(int argc, char *argv[])
   UserData webdata;
   N_Vector cc, cp, id;
   int iout, retval;
-  sunindextype mu, ml, smu;
+  sunindextype mu, ml;
   realtype rtol, atol, t0, tout, tret;
   int num_threads;
 
@@ -273,8 +269,7 @@ int main(int argc, char *argv[])
   /* Setup band matrix and linear solver, and attach to IDA. */
 
   mu = ml = NSMX;
-  smu = mu+ml;
-  A = SUNBandMatrix(NEQ, mu, ml, smu);
+  A = SUNBandMatrix(NEQ, mu, ml);
   if(check_retval((void *)A, "SUNBandMatrix", 0)) return(1);
   LS = SUNLinSol_Band(cc, A);
   if(check_retval((void *)LS, "SUNLinSol_Band", 0)) return(1);

@@ -1,19 +1,15 @@
 /*---------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  *---------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2015, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *---------------------------------------------------------------
  * Example problem:
  *
@@ -210,7 +206,7 @@ int main(int argc, char *argv[])
   for (i=0; i<N; i++)  data[IDX(i,2)] = RCONST(1.0);
 
   /* Initialize matrix and linear solver data structures */
-  A = SUNBandMatrix(NEQ, 4, 4, 8);
+  A = SUNBandMatrix(NEQ, 4, 4);
   if (check_flag((void *)A, "SUNBandMatrix", 0)) return 1;
   LS = SUNLinSol_Band(y, A);
   if (check_flag((void *)LS, "SUNLinSol_Band", 0)) return 1;

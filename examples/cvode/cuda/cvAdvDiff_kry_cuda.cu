@@ -6,15 +6,15 @@
  *                   example by Scott D. Cohen, Alan C.
  *                   Hindmarsh and Radu Serban @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2017, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Example problem:
  *
@@ -42,6 +42,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include <cuda_runtime.h>
 
 #include <cvode/cvode.h>               /* prototypes for CVODE fcts., consts. */
 #include <sunlinsol/sunlinsol_spgmr.h> /* access to SPGMR SUNLinearSolver     */
@@ -168,11 +170,18 @@ int main(int argc, char** argv)
   void *cvode_mem;
   int iout, retval;
   long int nst;
+  cudaStream_t stream;
+  cudaError_t cuerr;
 
   u = NULL;
   data = NULL;
   LS = NULL;
   cvode_mem = NULL;
+
+  /* optional: create a cudaStream to use with the CUDA NVector
+     (otherwise the default stream is used) */
+  cuerr = cudaStreamCreate(&stream);
+  if(cuerr != cudaSuccess) { printf("Error: cudaStreamCreate() failed\n"); return(1); }
 
   /* Set model parameters */
   data = SetUserData(argc, argv);
@@ -184,6 +193,9 @@ int main(int argc, char** argv)
   /* Create a CUDA vector with initial values */
   u = N_VNew_Cuda(data->NEQ);  /* Allocate u vector */
   if(check_retval((void*)u, "N_VNew_Cuda", 0)) return(1);
+
+  /* Use a non-default cuda stream for kernel execution */
+  N_VSetCudaStream_Cuda(u, &stream);
 
   SetIC(u, data);  /* Initialize u vector */
 
@@ -238,6 +250,9 @@ int main(int argc, char** argv)
   N_VDestroy(u);          /* Free the u vector */
   CVodeFree(&cvode_mem);  /* Free the integrator memory */
   free(data);             /* Free the user data */
+  
+  cuerr = cudaStreamDestroy(stream); /* Free and cleanup the CUDA stream */
+  if(cuerr != cudaSuccess) { printf("Error: cudaStreamDestroy() failed\n"); return(1); }
 
   return(0);
 }

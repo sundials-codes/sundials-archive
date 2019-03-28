@@ -2,15 +2,15 @@
  * -----------------------------------------------------------------
  * Programmer(s): David Gardner @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  */
 
@@ -87,6 +87,10 @@ dotProdMultiKernel(int nv, T* xd, T** yd, T* out, I n)
 
   I tid = threadIdx.x;
   I i = blockIdx.x*(blockDim.x*2) + threadIdx.x;
+
+  // Initialize shared memory to zero
+  for (int k=0; k<nv; k++)
+    shmem[tid + k*blockDim.x] = 0.0;
 
   // First reduction step before storing data in shared memory.
   if (i < n)
@@ -218,6 +222,10 @@ wL2NormSquareVectorArrayKernel(int nv, T** xd, T** wd, T* out, I n)
   I tid = threadIdx.x;
   I i = blockIdx.x*(blockDim.x*2) + threadIdx.x;
 
+  // Initialize shared memory to zero
+  for (int k=0; k<nv; k++)
+    shmem[tid + k*blockDim.x] = 0.0;
+
   // First reduction step before storing data in shared memory.
   if (i < n)
     for (int k=0; k<nv; k++)
@@ -257,6 +265,10 @@ wL2NormSquareMaskVectorArrayKernel(int nv, T** xd, T** wd, T* id, T* out, I n)
 
   I tid = threadIdx.x;
   I i = blockIdx.x*(blockDim.x*2) + threadIdx.x;
+
+  // Initialize shared memory to zero
+  for (int k=0; k<nv; k++)
+    shmem[tid + k*blockDim.x] = 0.0;
 
   // First reduction step before storing data in shared memory.
   if (i < n && id[i] > 0.0)
@@ -361,9 +373,15 @@ inline cudaError_t linearCombination(int nvec, T* c, Vector<T,I>** X, Vector<T,I
   ThreadPartitioning<T, I>& p = X[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::linearCombinationKernel<<<grid, block>>>(nvec, d_c, d_Xd,
-                                                         Z->device(), Z->size());
+  math_kernels::linearCombinationKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      d_c,
+      d_Xd,
+      Z->device(),
+      Z->size()
+  );
 
   // Free host array
   delete[] h_Xd;
@@ -417,9 +435,16 @@ inline cudaError_t scaleAddMulti(int nvec, T* c, Vector<T,I>* X,
   ThreadPartitioning<T, I>& p = Z[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::scaleAddMultiKernel<<<grid, block>>>(nvec, d_c, X->device(),
-                                                     d_Yd, d_Zd, X->size());
+  math_kernels::scaleAddMultiKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      d_c,
+      X->device(),
+      d_Yd,
+      d_Zd,
+      X->size()
+  );
 
   // Free host array
   delete[] h_Yd;
@@ -460,17 +485,20 @@ inline cudaError_t dotProdMulti(int nvec, Vector<T,I>* x, Vector<T,I>** Y,
   unsigned grid               = p.grid();
   unsigned block              = p.block();
   unsigned shMemSize          = nvec*block*sizeof(T);
+  const cudaStream_t stream   = p.stream();
 
   // Allocate reduction buffer on device
   T* d_buff;
   err = cudaMalloc((void**) &d_buff, nvec*grid*sizeof(T));
   if (err != cudaSuccess) return cudaGetLastError();
 
-  math_kernels::dotProdMultiKernel<T,I><<< grid, block, shMemSize >>>(nvec,
-                                                                      x->device(),
-                                                                      d_Yd,
-                                                                      d_buff,
-                                                                      x->size());
+  math_kernels::dotProdMultiKernel<T,I><<<grid, block, shMemSize, stream>>>(
+      nvec,
+      x->device(),
+      d_Yd,
+      d_buff,
+      x->size()
+  );
 
   unsigned n = grid;
   unsigned nmax = 2*block;
@@ -480,10 +508,12 @@ inline cudaError_t dotProdMulti(int nvec, Vector<T,I>* x, Vector<T,I>** Y,
     grid = (n + block - 1)/block;
 
     // Rerun reduction kernel
-    math_kernels::sumReduceVectorKernel<T,I><<< grid, block, shMemSize >>>(nvec,
-                                                                           d_buff,
-                                                                           d_buff,
-                                                                           n);
+    math_kernels::sumReduceVectorKernel<T,I><<<grid, block, shMemSize, stream>>>(
+        nvec,
+        d_buff,
+        d_buff,
+        n
+    );
 
     // update buffer array working length
     n = grid;
@@ -562,9 +592,17 @@ inline cudaError_t linearSumVectorArray(int nvec, T a, Vector<T,I>** X, T b,
   ThreadPartitioning<T, I>& p = Z[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::linearSumVectorArrayKernel<<<grid, block>>>(nvec, a, d_Xd, b,
-                                                            d_Yd, d_Zd, Z[0]->size());
+  math_kernels::linearSumVectorArrayKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      a,
+      d_Xd,
+      b,
+      d_Yd,
+      d_Zd,
+      Z[0]->size()
+  );
 
   // Free host array
   delete[] h_Xd;
@@ -622,9 +660,15 @@ inline cudaError_t scaleVectorArray(int nvec, T* c, Vector<T,I>** X,
   ThreadPartitioning<T, I>& p = Z[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::scaleVectorArrayKernel<<<grid, block>>>(nvec, d_c, d_Xd, d_Zd,
-                                                        Z[0]->size());
+  math_kernels::scaleVectorArrayKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      d_c,
+      d_Xd,
+      d_Zd,
+      Z[0]->size()
+  );
 
   // Free host array
   delete[] h_Xd;
@@ -661,9 +705,14 @@ inline cudaError_t constVectorArray(int nvec, T c, Vector<T,I>** Z)
   ThreadPartitioning<T, I>& p = Z[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::constVectorArrayKernel<<<grid, block>>>(nvec, c, d_Zd,
-                                                        Z[0]->size());
+  math_kernels::constVectorArrayKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      c,
+      d_Zd,
+      Z[0]->size()
+  );
 
   // Free host array
   delete[] h_Zd;
@@ -709,17 +758,20 @@ inline cudaError_t wL2NormSquareVectorArray(int nvec, Vector<T,I>** X,
   unsigned grid               = p.grid();
   unsigned block              = p.block();
   unsigned shMemSize          = nvec*block*sizeof(T);
+  const cudaStream_t stream   = p.stream();
 
   // Allocate reduction buffer on device
   T* d_buff;
   err = cudaMalloc((void**) &d_buff, nvec*grid*sizeof(T));
   if (err != cudaSuccess) return cudaGetLastError();
 
-  math_kernels::wL2NormSquareVectorArrayKernel<<< grid, block, shMemSize >>>(nvec,
-                                                                             d_Xd,
-                                                                             d_Wd,
-                                                                             d_buff,
-                                                                             X[0]->size());
+  math_kernels::wL2NormSquareVectorArrayKernel<<<grid, block, shMemSize, stream>>>(
+      nvec,
+      d_Xd,
+      d_Wd,
+      d_buff,
+      X[0]->size()
+  );
 
   unsigned n = grid;
   unsigned nmax = 2*block;
@@ -729,10 +781,12 @@ inline cudaError_t wL2NormSquareVectorArray(int nvec, Vector<T,I>** X,
     grid = (n + block - 1)/block;
 
     // Rerun reduction kernel
-    math_kernels::sumReduceVectorKernel<T,I><<< grid, block, shMemSize >>>(nvec,
-                                                                           d_buff,
-                                                                           d_buff,
-                                                                           n);
+    math_kernels::sumReduceVectorKernel<T,I><<<grid, block, shMemSize, stream>>>(
+        nvec,
+        d_buff,
+        d_buff,
+        n
+    );
 
     // update buffer array working length
     n = grid;
@@ -801,18 +855,21 @@ inline cudaError_t wL2NormSquareMaskVectorArray(int nvec, Vector<T,I>** X,
   unsigned grid               = p.grid();
   unsigned block              = p.block();
   unsigned shMemSize          = nvec*block*sizeof(T);
+  const cudaStream_t stream   = p.stream();
 
   // Allocate reduction buffer on device
   T* d_buff;
   err = cudaMalloc((void**) &d_buff, nvec*grid*sizeof(T));
   if (err != cudaSuccess) return cudaGetLastError();
 
-  math_kernels::wL2NormSquareMaskVectorArrayKernel<<< grid, block, shMemSize >>>(nvec,
-                                                                            d_Xd,
-                                                                            d_Wd,
-                                                                            ID->device(),
-                                                                            d_buff,
-                                                                            X[0]->size());
+  math_kernels::wL2NormSquareMaskVectorArrayKernel<<<grid, block, shMemSize, stream>>>(
+      nvec,
+      d_Xd,
+      d_Wd,
+      ID->device(),
+      d_buff,
+      X[0]->size()
+  );
 
   unsigned n = grid;
   unsigned nmax = 2*block;
@@ -822,10 +879,12 @@ inline cudaError_t wL2NormSquareMaskVectorArray(int nvec, Vector<T,I>** X,
     grid = (n + block - 1)/block;
 
     // Rerun reduction kernel
-    math_kernels::sumReduceVectorKernel<T,I><<< grid, block, shMemSize >>>(nvec,
-                                                                           d_buff,
-                                                                           d_buff,
-                                                                           n);
+    math_kernels::sumReduceVectorKernel<T,I><<<grid, block, shMemSize, stream>>>(
+        nvec,
+        d_buff,
+        d_buff,
+        n
+    );
 
     // update buffer array working length
     n = grid;
@@ -910,10 +969,17 @@ inline cudaError_t scaleAddMultiVectorArray(int nvec, int nsum, T* c,
   ThreadPartitioning<T, I>& p = Z[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::scaleAddMultiVectorArrayKernel<<<grid, block>>>(nvec, nsum, d_c,
-                                                                d_Xd, d_Yd, d_Zd,
-                                                                Z[0]->size());
+  math_kernels::scaleAddMultiVectorArrayKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      nsum,
+      d_c,
+      d_Xd,
+      d_Yd,
+      d_Zd,
+      Z[0]->size()
+  );
 
   // Free host array
   delete[] h_Xd;
@@ -971,11 +1037,16 @@ inline cudaError_t linearCombinationVectorArray(int nvec, int nsum, T* c,
   ThreadPartitioning<T, I>& p = Z[0]->partStream();
   const I grid                = p.grid();
   const unsigned block        = p.block();
+  const cudaStream_t stream   = p.stream();
 
-  math_kernels::linearCombinationVectorArrayKernel<<<grid, block>>>(nvec, nsum,
-                                                                    d_c, d_Xd,
-                                                                    d_Zd,
-                                                                    Z[0]->size());
+  math_kernels::linearCombinationVectorArrayKernel<<<grid, block, 0, stream>>>(
+      nvec,
+      nsum,
+      d_c,
+      d_Xd,
+      d_Zd,
+      Z[0]->size()
+  );
 
   // Free host array
   delete[] h_Xd;

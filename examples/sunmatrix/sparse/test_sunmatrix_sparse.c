@@ -3,19 +3,15 @@
  * Programmer(s): Daniel Reynolds @ SMU
  *                David Gardner @ LLNL
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This is the testing routine to check the SUNMatrix Sparse module
  * implementation.
@@ -51,7 +47,7 @@ int main(int argc, char *argv[])
   realtype*    vecdata;                    /* pointers to vector data    */
   SUNMatrix    A, B, C, D, I;              /* test matrices              */
   realtype*    matdata;                    /* pointer to matrix data     */
-  sunindextype i, j, k, kstart, kend, N, uband, lband, suband;
+  sunindextype i, j, k, kstart, kend, N, uband, lband;
   sunindextype *colptrs, *rowindices;
   sunindextype *rowptrs, *colindices;
   int          print_timing, square;
@@ -189,8 +185,7 @@ int main(int argc, char *argv[])
   N = 7;
   uband = 1;
   lband = 2;                                   /* B(i,j) = j + (j-i) */
-  suband = 3;
-  B = SUNBandMatrix(N, uband, lband, suband);  /* B = [  0  2  0  0  0  0  0 ] */
+  B = SUNBandMatrix(N, uband, lband);          /* B = [  0  2  0  0  0  0  0 ] */
   for (j=0; j<N; j++) {                        /*     [ -1  1  3  0  0  0  0 ] */
     matdata = SUNBandMatrix_Column(B, j);      /*     [ -2  0  2  4  0  0  0 ] */
     kstart = (j<uband) ? -j : -uband;          /*     [  0 -1  1  3  5  0  0 ] */

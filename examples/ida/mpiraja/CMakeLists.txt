@@ -1,15 +1,15 @@
 # ---------------------------------------------------------------
 # Programmer:  Slaven Peles, and Cody J. Balos @ LLNL
 # ---------------------------------------------------------------
-# LLNS Copyright Start
-# Copyright (c) 2014, Lawrence Livermore National Security
-# This work was performed under the auspices of the U.S. Department
-# of Energy by Lawrence Livermore National Laboratory in part under
-# Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
-# Produced at the Lawrence Livermore National Laboratory.
+# SUNDIALS Copyright Start
+# Copyright (c) 2002-2019, Lawrence Livermore National Security
+# and Southern Methodist University.
 # All rights reserved.
-# For details, see the LICENSE file.
-# LLNS Copyright End
+#
+# See the top-level LICENSE and NOTICE files for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+# SUNDIALS Copyright End
 # ---------------------------------------------------------------
 # CMakeLists.txt file for IDA raja examples
 # ---------------------------------------------------------------
@@ -18,11 +18,9 @@
 # 'develop' for examples excluded from 'make test' in releases
 
 # Examples using SUNDIALS linear solvers
-IF(MPI_C_FOUND)
-  SET(IDA_examples
-      "idaHeat2D_kry_p_mpiraja\;1\;4\;develop"
-     )
-ENDIF()
+SET(IDA_examples
+  "idaHeat2D_kry_p_mpiraja\;1\;4\;develop"
+  )
 
 IF(MPI_C_COMPILER)
   # use MPI wrapper as the compiler

@@ -1,25 +1,18 @@
 /* -----------------------------------------------------------------
  * Programmer(s): Slaven Peles @ LLNL
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This is the header file for the RAJA implementation of the
  * NVECTOR module.
- *
- * Part I contains declarations specific to the RAJA
- * implementation of the supplied NVECTOR module.
- *
- * Part II contains the prototype for the constructor N_VNew_Raja
- * as well as implementation-specific prototypes for various useful
- * vector operations.
  *
  * Notes:
  *
@@ -52,11 +45,9 @@
 extern "C" {
 #endif
 
-
-
 /*
  * -----------------------------------------------------------------
- * PART I: RAJA implementation of N_Vector
+ * RAJA implementation of N_Vector
  * -----------------------------------------------------------------
  */
 
@@ -69,135 +60,31 @@ struct _N_VectorContent_Raja {};
 
 typedef struct _N_VectorContent_Raja *N_VectorContent_Raja;
 
-
-
 /*
  * -----------------------------------------------------------------
- * PART II: functions exported by nvector_raja
- *
- * CONSTRUCTORS:
- *    N_VNew_Raja
- *    N_VNewEmpty_Raja
- *    N_VMake_Raja
- * DESTRUCTORS:
- *    N_VDestroy_Raja
- * OTHER:
- *    N_VGetLength_Raja
- *    N_VGetHostArrayPointer_Raja
- *    N_VGetDeviceArrayPointer_Raja
- *    N_VPrint_Raja
- *    N_VPrintFile_Raja
- * -----------------------------------------------------------------
- */
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VNew_Raja
- * -----------------------------------------------------------------
- * This function creates and allocates memory for a RAJA vector on
- * a single node.
+ * Functions exported by nvector_raja
  * -----------------------------------------------------------------
  */
 
 SUNDIALS_EXPORT N_Vector N_VNew_Raja(sunindextype length);
 
-/*
- * -----------------------------------------------------------------
- * Function : N_VNewEmpty_Raja
- * -----------------------------------------------------------------
- * This function creates a new RAJA N_Vector with an empty (NULL)
- * data array.
- * -----------------------------------------------------------------
- */
-
-SUNDIALS_EXPORT N_Vector N_VNewEmpty_Raja(sunindextype local_length);
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VMake_Raja
- * -----------------------------------------------------------------
- * This function creates and allocates memory for a RAJA vector
- * with a user-supplied data array.
- * -----------------------------------------------------------------
- */
+SUNDIALS_EXPORT N_Vector N_VNewEmpty_Raja();
 
 SUNDIALS_EXPORT N_Vector N_VMake_Raja(N_VectorContent_Raja c);
 
-/*
- * -----------------------------------------------------------------
- * Function : N_VGetLength_Raja
- * -----------------------------------------------------------------
- * This function returns the length of the vector.
- * -----------------------------------------------------------------
- */
-
 SUNDIALS_EXPORT sunindextype N_VGetLength_Raja(N_Vector v);
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VGetHostArrayPointer_Raja
- * -----------------------------------------------------------------
- * This function returns pointer to the host raw data.
- * -----------------------------------------------------------------
- */
 
 SUNDIALS_EXPORT realtype *N_VGetHostArrayPointer_Raja(N_Vector v);
 
-/*
- * -----------------------------------------------------------------
- * Function : N_VGetDeviceArrayPointer_Raja
- * -----------------------------------------------------------------
- * This function returns pointer to the device raw data.
- * -----------------------------------------------------------------
- */
-
 SUNDIALS_EXPORT realtype *N_VGetDeviceArrayPointer_Raja(N_Vector v);
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VCopyTotDevice_Raja
- * -----------------------------------------------------------------
- * This function copies host data to the device.
- * -----------------------------------------------------------------
- */
 
 SUNDIALS_EXPORT void N_VCopyToDevice_Raja(N_Vector v);
 
-/*
- * -----------------------------------------------------------------
- * Function : N_VCopyTotDevice_Raja
- * -----------------------------------------------------------------
- * This function copies vector data from the device to the host.
- * -----------------------------------------------------------------
- */
-
 SUNDIALS_EXPORT void N_VCopyFromDevice_Raja(N_Vector v);
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VPrint_Raja
- * -----------------------------------------------------------------
- * This function prints the content of a RAJA vector to stdout.
- * -----------------------------------------------------------------
- */
 
 SUNDIALS_EXPORT void N_VPrint_Raja(N_Vector v);
 
-/*
- * -----------------------------------------------------------------
- * Function : N_VPrintFile_Raja
- * -----------------------------------------------------------------
- * This function prints the content of a RAJA vector to outfile.
- * -----------------------------------------------------------------
- */
-
 SUNDIALS_EXPORT void N_VPrintFile_Raja(N_Vector v, FILE *outfile);
-
-/*
- * -----------------------------------------------------------------
- * RAJA implementations of various useful vector operations
- * -----------------------------------------------------------------
- */
 
 SUNDIALS_EXPORT N_Vector_ID N_VGetVectorID_Raja(N_Vector v);
 SUNDIALS_EXPORT N_Vector N_VCloneEmpty_Raja(N_Vector w);
@@ -250,6 +137,36 @@ SUNDIALS_EXPORT int N_VLinearCombinationVectorArray_Raja(int nvec, int nsum,
                                                          realtype* c,
                                                          N_Vector** X,
                                                          N_Vector* Z);
+
+/* OPTIONAL local reduction kernels (no parallel communication) */
+SUNDIALS_EXPORT realtype N_VDotProdLocal_Raja(N_Vector x, N_Vector y);
+SUNDIALS_EXPORT realtype N_VMaxNormLocal_Raja(N_Vector x);
+SUNDIALS_EXPORT realtype N_VMinLocal_Raja(N_Vector x);
+SUNDIALS_EXPORT realtype N_VL1NormLocal_Raja(N_Vector x);
+SUNDIALS_EXPORT realtype N_VWSqrSumLocal_Raja(N_Vector x, N_Vector w);
+SUNDIALS_EXPORT realtype N_VWSqrSumMaskLocal_Raja(N_Vector x, N_Vector w, N_Vector id);
+SUNDIALS_EXPORT booleantype N_VInvTestLocal_Raja(N_Vector x, N_Vector z);
+SUNDIALS_EXPORT booleantype N_VConstrMaskLocal_Raja(N_Vector c, N_Vector x, N_Vector m);
+SUNDIALS_EXPORT realtype N_VMinQuotientLocal_Raja(N_Vector num, N_Vector denom);
+
+
+/*
+ * -----------------------------------------------------------------
+ * Enable / disable fused vector operations
+ * -----------------------------------------------------------------
+ */
+
+SUNDIALS_EXPORT int N_VEnableFusedOps_Raja(N_Vector v, booleantype tf);
+
+SUNDIALS_EXPORT int N_VEnableLinearCombination_Raja(N_Vector v, booleantype tf);
+SUNDIALS_EXPORT int N_VEnableScaleAddMulti_Raja(N_Vector v, booleantype tf);
+
+SUNDIALS_EXPORT int N_VEnableLinearSumVectorArray_Raja(N_Vector v, booleantype tf);
+SUNDIALS_EXPORT int N_VEnableScaleVectorArray_Raja(N_Vector v, booleantype tf);
+SUNDIALS_EXPORT int N_VEnableConstVectorArray_Raja(N_Vector v, booleantype tf);
+SUNDIALS_EXPORT int N_VEnableScaleAddMultiVectorArray_Raja(N_Vector v, booleantype tf);
+SUNDIALS_EXPORT int N_VEnableLinearCombinationVectorArray_Raja(N_Vector v, booleantype tf);
+
 #ifdef __cplusplus
 }
 #endif

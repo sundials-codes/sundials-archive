@@ -1,15 +1,15 @@
 /* -----------------------------------------------------------------------------
  * Programmer(s): David J. Gardner @ LLNL
  * -----------------------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------------------
  * This the implementation file for the CVODE nonlinear solver interface.
  * ---------------------------------------------------------------------------*/
@@ -75,7 +75,8 @@ int CVodeSetNonlinearSolver(void *cvode_mem, SUNNonlinearSolver NLS)
   }
 
   /* free any existing nonlinear solver */
-  if (cv_mem->NLS) retval = SUNNonlinSolFree(cv_mem->NLS);
+  if ((cv_mem->NLS != NULL) && (cv_mem->ownNLS))
+    retval = SUNNonlinSolFree(cv_mem->NLS);
 
   /* set SUNNonlinearSolver pointer */
   cv_mem->NLS = NLS;

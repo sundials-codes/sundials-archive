@@ -1,15 +1,15 @@
 /* -----------------------------------------------------------------------------
  * Programmer(s): David J. Gardner @ LLNL
  * -----------------------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Lawrence Livermore National Laboratory in part under
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------------------
  * This is the testing routine to check the SUNNonlinearSolver Newton module
  * ---------------------------------------------------------------------------*/
@@ -22,6 +22,16 @@
 #include "sunmatrix/sunmatrix_dense.h"
 #include "sunlinsol/sunlinsol_dense.h"
 #include "sunnonlinsol/sunnonlinsol_newton.h"
+
+#if defined(SUNDIALS_EXTENDED_PRECISION)
+#define GSYM "Lg"
+#define ESYM "Le"
+#define FSYM "Lf"
+#else
+#define GSYM "g"
+#define ESYM "e"
+#define FSYM "f"
+#endif
 
 #define NEQ   3                /* number of equations        */
 #define TOL   RCONST(1.0e-2)   /* nonlinear solver tolerance */
@@ -91,13 +101,13 @@ int main(int argc, char *argv[])
   x  = N_VNew_Serial(NEQ);
   if (check_retval((void *)x, "N_VNew_Serial", 0)) return(1);
 
-  y0 = N_VNew_Serial(NEQ);
+  y0 = N_VClone(x);
   if (check_retval((void *)y0, "N_VNew_Serial", 0)) return(1);
 
-  y  = N_VNew_Serial(NEQ);
+  y  = N_VClone(x);
   if (check_retval((void *)y, "N_VNew_Serial", 0)) return(1);
 
-  w  = N_VNew_Serial(NEQ);
+  w  = N_VClone(x);
   if (check_retval((void *)w, "N_VNew_Serial", 0)) return(1);
 
   /* set initial guess */
@@ -155,15 +165,15 @@ int main(int argc, char *argv[])
 
   /* print the solution */
   printf("Solution:\n");
-  printf("y1 = %g\n",NV_Ith_S(y,0));
-  printf("y2 = %g\n",NV_Ith_S(y,1));
-  printf("y3 = %g\n",NV_Ith_S(y,2));
+  printf("y1 = %"GSYM"\n",NV_Ith_S(y,0));
+  printf("y2 = %"GSYM"\n",NV_Ith_S(y,1));
+  printf("y3 = %"GSYM"\n",NV_Ith_S(y,2));
 
   /* print the solution error */
   printf("Solution Error:\n");
-  printf("e1 = %g\n",NV_Ith_S(y,0) - Y1);
-  printf("e2 = %g\n",NV_Ith_S(y,1) - Y2);
-  printf("e3 = %g\n",NV_Ith_S(y,2) - Y3);
+  printf("e1 = %"GSYM"\n",NV_Ith_S(y,0) - Y1);
+  printf("e2 = %"GSYM"\n",NV_Ith_S(y,1) - Y2);
+  printf("e3 = %"GSYM"\n",NV_Ith_S(y,2) - Y3);
 
   /* get the number of linear iterations */
   retval = SUNNonlinSolGetNumIters(NLS, &niters);
@@ -173,7 +183,9 @@ int main(int argc, char *argv[])
 
   /* Free vector, matrix, linear solver, and nonlinear solver */
   N_VDestroy(x);
+  N_VDestroy(y0);
   N_VDestroy(y);
+  N_VDestroy(w);
   SUNMatDestroy(A);
   SUNLinSolFree(LS);
   SUNNonlinSolFree(NLS);

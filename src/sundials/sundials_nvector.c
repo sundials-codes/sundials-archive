@@ -1,15 +1,15 @@
 /* ----------------------------------------------------------------- 
  * Programmer(s): Radu Serban and Aaron Collier @ LLNL                               
  * -----------------------------------------------------------------
- * LLNS Copyright Start
- * Copyright (c) 2014, Lawrence Livermore National Security
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Lawrence Livermore National Laboratory in part under 
- * Contract W-7405-Eng-48 and in part under Contract DE-AC52-07NA27344.
- * Produced at the Lawrence Livermore National Laboratory.
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * This is the implementation file for a generic NVECTOR package.
  * It contains the implementation of the N_Vector operations listed
@@ -69,6 +69,19 @@ void N_VSetArrayPointer(realtype *v_data, N_Vector v)
 {
   v->ops->nvsetarraypointer(v_data, v);
   return;
+}
+
+void *N_VGetCommunicator(N_Vector v)
+{
+  if (v->ops->nvgetcommunicator)
+    return(v->ops->nvgetcommunicator(v));
+  else
+    return(NULL);
+}
+
+sunindextype N_VGetLength(N_Vector v)
+{
+  return((sunindextype) v->ops->nvgetlength(v));
 }
 
 /* -----------------------------------------------------------------
@@ -342,7 +355,8 @@ int N_VWrmsNormMaskVectorArray(int nvec, N_Vector* X, N_Vector* W, N_Vector id,
 int N_VScaleAddMultiVectorArray(int nvec, int nsum, realtype* a, N_Vector* X,
                                  N_Vector** Y, N_Vector** Z)
 {
-  int       i, j, ier;
+  int       i, j;
+  int       ier=0;
   realtype  ONE=RCONST(1.0);
   N_Vector* YY=NULL;
   N_Vector* ZZ=NULL;
@@ -389,7 +403,8 @@ int N_VScaleAddMultiVectorArray(int nvec, int nsum, realtype* a, N_Vector* X,
 int N_VLinearCombinationVectorArray(int nvec, int nsum, realtype* c, N_Vector** X,
                                     N_Vector* Z)
 {
-  int       i, j, ier;
+  int       i, j;
+  int       ier=0;
   realtype  ONE=RCONST(1.0);
   N_Vector* Y=NULL;
 
@@ -492,4 +507,54 @@ void N_VDestroyVectorArray(N_Vector *vs, int count)
   free(vs); vs = NULL;
 
   return;
+}
+
+
+/* -----------------------------------------------------------------
+ * OPTIONAL local reduction kernels (no parallel communication)
+ * ----------------------------------------------------------------- */
+
+realtype N_VDotProdLocal(N_Vector x, N_Vector y)
+{
+  return((realtype) y->ops->nvdotprodlocal(x, y));
+}
+
+realtype N_VMaxNormLocal(N_Vector x)
+{
+  return((realtype) x->ops->nvmaxnormlocal(x));
+}
+
+realtype N_VMinLocal(N_Vector x)
+{
+  return((realtype) x->ops->nvminlocal(x));
+}
+
+realtype N_VL1NormLocal(N_Vector x)
+{
+  return((realtype) x->ops->nvl1normlocal(x));
+}
+
+realtype N_VWSqrSumLocal(N_Vector x, N_Vector w)
+{
+  return((realtype) x->ops->nvwsqrsumlocal(x,w));
+}
+
+realtype N_VWSqrSumMaskLocal(N_Vector x, N_Vector w, N_Vector id)
+{
+  return((realtype) x->ops->nvwsqrsummasklocal(x,w,id));
+}
+
+booleantype N_VInvTestLocal(N_Vector x, N_Vector z)
+{
+  return((booleantype) z->ops->nvinvtestlocal(x,z));
+}
+
+booleantype N_VConstrMaskLocal(N_Vector c, N_Vector x, N_Vector m)
+{
+  return((booleantype) x->ops->nvconstrmasklocal(c,x,m));
+}
+
+realtype N_VMinQuotientLocal(N_Vector num, N_Vector denom)
+{
+  return((realtype) num->ops->nvminquotientlocal(num,denom));
 }

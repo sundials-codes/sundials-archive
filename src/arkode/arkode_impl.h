@@ -1,19 +1,15 @@
 /*---------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  *---------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *---------------------------------------------------------------
  * Implementation header file for the main ARKode integrator.
  *--------------------------------------------------------------*/
@@ -769,7 +765,7 @@ typedef struct ARKodeMemRec {
   at the inputs (t,y), and store the result in the N_Vector f.
   Depending on the type of stepper, this may be just the single
   ODE RHS function supplied (e.g. ERK, DIRK, IRK), or it may be
-  the sum of many ODE RHS functions (e.g. ARK, RMIS).  The 'mode'
+  the sum of many ODE RHS functions (e.g. ARK, MRI).  The 'mode'
   flag indicates where this routine is called:
      0 -> called at the beginning of a simulation
      1 -> called at the end of a successful step
@@ -1079,6 +1075,8 @@ int arkPredict_Bootstrap(ARKodeMem ark_mem, realtype hj,
 #define MSG_ARK_MASSFREE_FAIL  "The mass matrixsolver's free routine failed."
 
 #define MSG_ARKADAPT_NO_MEM    "Adaptivity memory structure not allocated."
+#define MSG_ARK_VECTOROP_ERR      "At " MSG_TIME ", a vector operation failed."
+#define MSG_ARK_INNERSTEP_FAILED  "At " MSG_TIME ", the inner stepper failed in an unrecoverable manner."
 
 #ifdef __cplusplus
 }

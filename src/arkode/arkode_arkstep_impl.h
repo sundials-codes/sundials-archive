@@ -1,19 +1,15 @@
 /*---------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds @ SMU
  *---------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2018, Southern Methodist University and
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department
- * of Energy by Southern Methodist University and Lawrence Livermore
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  *---------------------------------------------------------------
  * Implementation header file for ARKode's ARK time stepper
  * module.
@@ -54,8 +50,8 @@ typedef struct ARKodeARKStepMemRec {
   ARKRhsFn     fi;
   booleantype  linear;          /* SUNTRUE if fi is linear        */
   booleantype  linear_timedep;  /* SUNTRUE if dfi/dy depends on t */
-  booleantype  explicit;        /* SUNTRUE if fi is enabled       */
-  booleantype  implicit;        /* SUNTRUE if fe is enabled       */
+  booleantype  explicit;        /* SUNTRUE if fe is enabled       */
+  booleantype  implicit;        /* SUNTRUE if fi is enabled       */
 
   /* ARK method storage and parameters */
   N_Vector *Fe;           /* explicit RHS at each stage */

@@ -2,19 +2,15 @@
  * -----------------------------------------------------------------
  * Programmer(s): Daniel R. Reynolds and Ting Yan @ SMU
  * -----------------------------------------------------------------
- * LLNS/SMU Copyright Start
- * Copyright (c) 2017, Southern Methodist University and 
- * Lawrence Livermore National Security
- *
- * This work was performed under the auspices of the U.S. Department 
- * of Energy by Southern Methodist University and Lawrence Livermore 
- * National Laboratory under Contract DE-AC52-07NA27344.
- * Produced at Southern Methodist University and the Lawrence 
- * Livermore National Laboratory.
- *
+ * SUNDIALS Copyright Start
+ * Copyright (c) 2002-2019, Lawrence Livermore National Security
+ * and Southern Methodist University.
  * All rights reserved.
- * For details, see the LICENSE file.
- * LLNS/SMU Copyright End
+ *
+ * See the top-level LICENSE and NOTICE files for details.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Example program for IDAS: Food web problem, OpenMP, GMRES, 
  * user-supplied preconditioner
@@ -114,7 +110,6 @@
 #include <math.h>
 
 #include <idas/idas.h>
-#include <idas/idas_spils.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <nvector/nvector_openmp.h>
 #include <sundials/sundials_dense.h>
@@ -296,11 +291,11 @@ int main(int argc, char *argv[])
   LS = SUNLinSol_SPGMR(cc, PREC_LEFT, maxl);      /* IDA only allows left preconditioning */
   if(check_retval((void *)LS, "SUNLinSol_SPGMR", 0)) return(1);
 
-  retval = IDASpilsSetLinearSolver(ida_mem, LS);
-  if(check_retval(&retval, "IDASpilsSetLinearSolver", 1)) return(1);
+  retval = IDASetLinearSolver(ida_mem, LS, NULL);
+  if(check_retval(&retval, "IDASetLinearSolver", 1)) return(1);
 
-  retval = IDASpilsSetPreconditioner(ida_mem, Precond, PSolve);
-  if(check_retval(&retval, "IDASpilsSetPreconditioner", 1)) return(1);
+  retval = IDASetPreconditioner(ida_mem, Precond, PSolve);
+  if(check_retval(&retval, "IDASetPreconditioner", 1)) return(1);
 
   /* Call IDACalcIC (with default options) to correct the initial values. */
 
@@ -697,18 +692,18 @@ static void PrintFinalStats(void *ida_mem)
 
   retval = IDAGetNumSteps(ida_mem, &nst);
   check_retval(&retval, "IDAGetNumSteps", 1);
-  retval = IDASpilsGetNumLinIters(ida_mem, &sli);
-  check_retval(&retval, "IDAGetNumNonlinSolvIters", 1);
+  retval = IDAGetNumLinIters(ida_mem, &sli);
+  check_retval(&retval, "IDAGetNumLinIters", 1);
   retval = IDAGetNumResEvals(ida_mem, &nre);
   check_retval(&retval, "IDAGetNumResEvals", 1);
   retval = IDAGetNumErrTestFails(ida_mem, &netf);
   check_retval(&retval, "IDAGetNumErrTestFails", 1);
-  retval = IDASpilsGetNumPrecSolves(ida_mem, &nps);
-  check_retval(&retval, "IDAGetNumNonlinSolvConvFails", 1);
-  retval = IDASpilsGetNumPrecEvals(ida_mem, &npevals);
-  check_retval(&retval, "IDADlsGetNumJacEvals", 1);
-  retval = IDASpilsGetNumResEvals(ida_mem, &nrevalsLS);
-  check_retval(&retval, "IDADlsGetNumResEvals", 1);
+  retval = IDAGetNumPrecSolves(ida_mem, &nps);
+  check_retval(&retval, "IDAGetNumPrecSolves", 1);
+  retval = IDAGetNumPrecEvals(ida_mem, &npevals);
+  check_retval(&retval, "IDAGetNumPrecEvals", 1);
+  retval = IDAGetNumLinResEvals(ida_mem, &nrevalsLS);
+  check_retval(&retval, "IDAGetNumLinResEvals", 1);
 
   printf("-----------------------------------------------------------\n");
   printf("Final run statistics: \n\n");
