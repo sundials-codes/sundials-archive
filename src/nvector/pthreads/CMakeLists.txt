@@ -16,9 +16,9 @@
 INSTALL(CODE "MESSAGE(\"\nInstall NVECTOR_PTHREADS\n\")")
 
 # Add F90 module if F2003 interface is enabled
-IF(F90_FOUND AND F2003_INTERFACE_ENABLE)
-  ADD_SUBDIRECTORY(F90)
-ENDIF(F90_FOUND AND F2003_INTERFACE_ENABLE)
+IF(F2003_FOUND AND F2003_INTERFACE_ENABLE)
+  ADD_SUBDIRECTORY(fmod)
+ENDIF(F2003_FOUND AND F2003_INTERFACE_ENABLE)
 
 # Add variable nvecpthreads_SOURCES with the sources for the NVECPTHREADS lib
 SET(nvecpthreads_SOURCES nvector_pthreads.c)
@@ -26,6 +26,7 @@ SET(nvecpthreads_SOURCES nvector_pthreads.c)
 # Add variable shared_SOURCES with the common SUNDIALS sources which will
 # also be included in the NVECPTHREADS library
 SET(shared_SOURCES
+  ${sundials_SOURCE_DIR}/src/sundials/sundials_nvector.c
   ${sundials_SOURCE_DIR}/src/sundials/sundials_math.c
   )
 

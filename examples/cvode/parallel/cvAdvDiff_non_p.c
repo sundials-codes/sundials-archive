@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
   if (my_pe == 0)
     PrintFinalStats(cvode_mem);  /* Print some final statistics */
 
-  N_VDestroy_Parallel(u);        /* Free the u vector */
+  N_VDestroy(u);                 /* Free the u vector */
   CVodeFree(&cvode_mem);         /* Free the integrator memory */
   SUNNonlinSolFree(NLS);         /* Free the nonlinear solver */
   free(data);                    /* Free user data */
@@ -314,16 +314,16 @@ static int f(realtype t, N_Vector u, N_Vector udot, void *user_data)
 
   /* Pass needed data to processes before and after current process. */
    if (my_pe != 0)
-     MPI_Send(&z[1], 1, PVEC_REAL_MPI_TYPE, my_pe_m1, 0, comm);
+     MPI_Send(&z[1], 1, MPI_SUNREALTYPE, my_pe_m1, 0, comm);
    if (my_pe != last_pe)
-     MPI_Send(&z[my_length], 1, PVEC_REAL_MPI_TYPE, my_pe_p1, 0, comm);
+     MPI_Send(&z[my_length], 1, MPI_SUNREALTYPE, my_pe_p1, 0, comm);
 
   /* Receive needed data from processes before and after current process. */
    if (my_pe != 0)
-     MPI_Recv(&z[0], 1, PVEC_REAL_MPI_TYPE, my_pe_m1, 0, comm, &status);
+     MPI_Recv(&z[0], 1, MPI_SUNREALTYPE, my_pe_m1, 0, comm, &status);
    else z[0] = ZERO;
    if (my_pe != last_pe)
-     MPI_Recv(&z[my_length+1], 1, PVEC_REAL_MPI_TYPE, my_pe_p1, 0, comm,
+     MPI_Recv(&z[my_length+1], 1, MPI_SUNREALTYPE, my_pe_p1, 0, comm,
               &status);
    else z[my_length + 1] = ZERO;
 

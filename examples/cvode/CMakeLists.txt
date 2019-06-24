@@ -26,6 +26,7 @@ if(EXAMPLES_ENABLE_C)
   endif()
   if(MPI_ENABLE AND MPI_C_FOUND)
     add_subdirectory(parallel)
+    add_subdirectory(C_mpimanyvector)
   endif()
   if(HYPRE_ENABLE AND HYPRE_FOUND)
     add_subdirectory(parhyp)
@@ -34,7 +35,7 @@ endif()
 
 # CXX examples
 if(EXAMPLES_ENABLE_CXX)
-  if(SUPERLUDIST_ENABLE AND SUPERLUDIST_FOUND)
+  if(MPI_ENABLE AND MPI_CXX_FOUND AND SUNDIALS_SUPERLUDIST)
     add_subdirectory(superludist)
   endif()
 endif()
@@ -47,8 +48,8 @@ if(F77_INTERFACE_ENABLE AND EXAMPLES_ENABLE_F77 AND F77_FOUND)
   endif()
 endif()
 
-if(F2003_INTERFACE_ENABLE AND EXAMPLES_ENABLE_F90 AND F90_FOUND)
-  add_subdirectory(F90_serial)
+if(F2003_INTERFACE_ENABLE AND EXAMPLES_ENABLE_F2003 AND F2003_FOUND)
+  add_subdirectory(F2003_serial)
 endif()
 
 # CUDA examples

@@ -36,7 +36,6 @@
 #include <sundials/sundials_nvector.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
-
 #include "test_nvector.h"
 
 /* private functions */
@@ -425,30 +424,24 @@ int Test_N_VGetLength(N_Vector W, int myid)
 
 
 /* ----------------------------------------------------------------------
- * Test_N_VGetCommunicator Test
- *
- * NOTE: This routine depends on SUNMPI_Comm_compare.  The input "comm"
- * should be a memory reference to the MPI communicator used to
- * construct W (or NULL if W is MPI-unaware).
+ * Test_N_VGetCommunicator Test (without MPI dependency)
  * --------------------------------------------------------------------*/
-int Test_N_VGetCommunicator(N_Vector W, SUNMPI_Comm *comm, int myid)
+int Test_N_VGetCommunicator(N_Vector W, void *comm, int myid)
 {
-  void* vcomm;
-  SUNMPI_Comm* Wcomm;
-  int same;
+  void* wcomm;
 
   /* ask W for its communicator */
-  vcomm = NULL;
-  vcomm = N_VGetCommunicator(W);
+  wcomm = NULL;
+  wcomm = N_VGetCommunicator(W);
 
   /* return with success if both are NULL */
-  if ((vcomm == NULL) && (comm == NULL))  {
+  if ((wcomm == NULL) && (comm == NULL))  {
     printf("PASSED test -- N_VGetCommunicator\n");
     return(0);
   }
 
   /* return with failure if either is NULL */
-  if (vcomm == NULL) {
+  if (wcomm == NULL) {
     printf(">>> FAILED test -- N_VGetCommunicator, Proc %d (incorrectly reports NULL comm)\n", myid);
     return(1);
   }
@@ -457,18 +450,8 @@ int Test_N_VGetCommunicator(N_Vector W, SUNMPI_Comm *comm, int myid)
     return(1);
   }
 
-  /* call SUNMPI_Comm_compare to check that communicators match or are congruent */
-  Wcomm = (SUNMPI_Comm *) vcomm;
-  if (SUNMPI_Comm_compare(*comm, *Wcomm, &same) != SUNMPI_SUCCESS) {
-    printf(">>> FAILED test -- N_VGetCommunicator, Proc %d (error in SUNMPI_Comm_compare)\n", myid);
-    return(1);
-  }
-  if ((same != SUNMPI_IDENT) && (same != SUNMPI_CONGRUENT)) {
-    printf(">>> FAILED test -- N_VGetCommunicator, Proc %d (mismatched comms)\n", myid);
-    return(1);
-  }
   if (myid == 0)
-    printf("PASSED test -- N_VGetCommunicator\n");
+    printf(">>> FAILED test -- N_VGetCommunicator, Proc %d has non-NULL comm with MPI disabled\n", myid);
   return(0);
 }
 
@@ -585,7 +568,7 @@ int Test_N_VLinearSum(N_Vector X, N_Vector Y, N_Vector Z,
   sync_device();
   stop_time = get_time();
 
-  /* Y should be vector of +1 */
+  /* X should be vector of +1 */
   failure = check_ans(ONE, X, local_length);
 
   if (failure) {
@@ -615,7 +598,7 @@ int Test_N_VLinearSum(N_Vector X, N_Vector Y, N_Vector Z,
   sync_device();
   stop_time = get_time();
 
-  /* Y should be vector of -1 */
+  /* X should be vector of -1 */
   failure = check_ans(NEG_ONE, X, local_length);
 
   if (failure) {
@@ -1439,7 +1422,7 @@ int Test_N_VWrmsNormMask(N_Vector X, N_Vector W, N_Vector ID,
   realtype fac;
 
   /* factor used in checking solutions */
-  fac = SUNRsqrt((realtype) (global_length - 1)/(global_length));
+  fac = SUNRsqrt((realtype) (global_length - 1)/(global_length))*HALF*HALF;
 
   /* fill vector data */
   N_VConst(NEG_HALF, X);
@@ -1455,8 +1438,8 @@ int Test_N_VWrmsNormMask(N_Vector X, N_Vector W, N_Vector ID,
   sync_device();
   stop_time = get_time();
 
-  /* ans equals 1/4 (same as wrms norm) */
-  failure = (ans < ZERO) ? 1 : FNEQ(ans, fac*HALF*HALF);
+  /* check ans */
+  failure = (ans < ZERO) ? 1 : FNEQ(ans, fac);
 
   if (failure) {
     printf(">>> FAILED test -- N_VWrmsNormMask, Proc %d \n", myid);

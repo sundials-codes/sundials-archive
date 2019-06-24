@@ -23,7 +23,6 @@
 
 #include <nvector/nvector_petsc.h>
 #include <sundials/sundials_math.h>
-#include <sundials/sundials_mpi.h>
 
 #define ZERO   RCONST(0.0)
 #define HALF   RCONST(0.5)
@@ -119,105 +118,85 @@ N_Vector N_VNewEmpty_Petsc(MPI_Comm comm,
                            sunindextype global_length)
 {
   N_Vector v;
-  N_Vector_Ops ops;
   N_VectorContent_Petsc content;
   sunindextype n, Nsum;
   PetscErrorCode ierr;
 
   /* Compute global length as sum of local lengths */
   n = local_length;
-  ierr = MPI_Allreduce(&n, &Nsum, 1, PVEC_INTEGER_MPI_TYPE, MPI_SUM, comm);
+  ierr = MPI_Allreduce(&n, &Nsum, 1, MPI_SUNINDEXTYPE, MPI_SUM, comm);
   CHKERRABORT(comm,ierr);
   if (Nsum != global_length) {
     fprintf(stderr, BAD_N);
     return(NULL);
   }
 
-  /* Create vector */
+  /* Create an empty vector object */
   v = NULL;
-  v = (N_Vector) malloc(sizeof *v);
+  v = N_VNewEmpty();
   if (v == NULL) return(NULL);
 
-  /* Create vector operation structure */
-  ops = NULL;
-  ops = (N_Vector_Ops) malloc(sizeof(struct _generic_N_Vector_Ops));
-  if (ops == NULL) { free(v); return(NULL); }
+  /* Attach operations */
 
-  ops->nvgetvectorid     = N_VGetVectorID_Petsc;
-  ops->nvclone           = N_VClone_Petsc;
-  ops->nvcloneempty      = N_VCloneEmpty_Petsc;
-  ops->nvdestroy         = N_VDestroy_Petsc;
-  ops->nvspace           = N_VSpace_Petsc;
-  ops->nvgetarraypointer = N_VGetArrayPointer_Petsc;
-  ops->nvsetarraypointer = N_VSetArrayPointer_Petsc;
-  ops->nvgetcommunicator = N_VGetCommunicator_Petsc;
-  ops->nvgetlength       = N_VGetLength_Petsc;
+  /* constructors, destructors, and utility operations */
+  v->ops->nvgetvectorid     = N_VGetVectorID_Petsc;
+  v->ops->nvclone           = N_VClone_Petsc;
+  v->ops->nvcloneempty      = N_VCloneEmpty_Petsc;
+  v->ops->nvdestroy         = N_VDestroy_Petsc;
+  v->ops->nvspace           = N_VSpace_Petsc;
+  v->ops->nvgetarraypointer = N_VGetArrayPointer_Petsc;
+  v->ops->nvsetarraypointer = N_VSetArrayPointer_Petsc;
+  v->ops->nvgetcommunicator = N_VGetCommunicator_Petsc;
+  v->ops->nvgetlength       = N_VGetLength_Petsc;
 
   /* standard vector operations */
-  ops->nvlinearsum    = N_VLinearSum_Petsc;
-  ops->nvconst        = N_VConst_Petsc;
-  ops->nvprod         = N_VProd_Petsc;
-  ops->nvdiv          = N_VDiv_Petsc;
-  ops->nvscale        = N_VScale_Petsc;
-  ops->nvabs          = N_VAbs_Petsc;
-  ops->nvinv          = N_VInv_Petsc;
-  ops->nvaddconst     = N_VAddConst_Petsc;
-  ops->nvdotprod      = N_VDotProd_Petsc;
-  ops->nvmaxnorm      = N_VMaxNorm_Petsc;
-  ops->nvwrmsnormmask = N_VWrmsNormMask_Petsc;
-  ops->nvwrmsnorm     = N_VWrmsNorm_Petsc;
-  ops->nvmin          = N_VMin_Petsc;
-  ops->nvwl2norm      = N_VWL2Norm_Petsc;
-  ops->nvl1norm       = N_VL1Norm_Petsc;
-  ops->nvcompare      = N_VCompare_Petsc;
-  ops->nvinvtest      = N_VInvTest_Petsc;
-  ops->nvconstrmask   = N_VConstrMask_Petsc;
-  ops->nvminquotient  = N_VMinQuotient_Petsc;
+  v->ops->nvlinearsum    = N_VLinearSum_Petsc;
+  v->ops->nvconst        = N_VConst_Petsc;
+  v->ops->nvprod         = N_VProd_Petsc;
+  v->ops->nvdiv          = N_VDiv_Petsc;
+  v->ops->nvscale        = N_VScale_Petsc;
+  v->ops->nvabs          = N_VAbs_Petsc;
+  v->ops->nvinv          = N_VInv_Petsc;
+  v->ops->nvaddconst     = N_VAddConst_Petsc;
+  v->ops->nvdotprod      = N_VDotProd_Petsc;
+  v->ops->nvmaxnorm      = N_VMaxNorm_Petsc;
+  v->ops->nvwrmsnormmask = N_VWrmsNormMask_Petsc;
+  v->ops->nvwrmsnorm     = N_VWrmsNorm_Petsc;
+  v->ops->nvmin          = N_VMin_Petsc;
+  v->ops->nvwl2norm      = N_VWL2Norm_Petsc;
+  v->ops->nvl1norm       = N_VL1Norm_Petsc;
+  v->ops->nvcompare      = N_VCompare_Petsc;
+  v->ops->nvinvtest      = N_VInvTest_Petsc;
+  v->ops->nvconstrmask   = N_VConstrMask_Petsc;
+  v->ops->nvminquotient  = N_VMinQuotient_Petsc;
 
-  /* fused vector operations (optional, NULL means disabled by default) */
-  ops->nvlinearcombination = NULL;
-  ops->nvscaleaddmulti     = NULL;
-  ops->nvdotprodmulti      = NULL;
+  /* fused and vector array operations are disabled (NULL) by default */
 
-  /* vector array operations (optional, NULL means disabled by default) */
-  ops->nvlinearsumvectorarray         = NULL;
-  ops->nvscalevectorarray             = NULL;
-  ops->nvconstvectorarray             = NULL;
-  ops->nvwrmsnormvectorarray          = NULL;
-  ops->nvwrmsnormmaskvectorarray      = NULL;
-  ops->nvscaleaddmultivectorarray     = NULL;
-  ops->nvlinearcombinationvectorarray = NULL;
-
-  /* local reduction kernels */
-  ops->nvdotprodlocal     = N_VDotProdLocal_Petsc;
-  ops->nvmaxnormlocal     = N_VMaxNormLocal_Petsc;
-  ops->nvminlocal         = N_VMinLocal_Petsc;
-  ops->nvl1normlocal      = N_VL1NormLocal_Petsc;
-  ops->nvinvtestlocal     = N_VInvTestLocal_Petsc;
-  ops->nvconstrmasklocal  = N_VConstrMaskLocal_Petsc;
-  ops->nvminquotientlocal = N_VMinQuotientLocal_Petsc;
-  ops->nvwsqrsumlocal     = N_VWSqrSumLocal_Petsc;
-  ops->nvwsqrsummasklocal = N_VWSqrSumMaskLocal_Petsc;
+  /* local reduction operations */
+  v->ops->nvdotprodlocal     = N_VDotProdLocal_Petsc;
+  v->ops->nvmaxnormlocal     = N_VMaxNormLocal_Petsc;
+  v->ops->nvminlocal         = N_VMinLocal_Petsc;
+  v->ops->nvl1normlocal      = N_VL1NormLocal_Petsc;
+  v->ops->nvinvtestlocal     = N_VInvTestLocal_Petsc;
+  v->ops->nvconstrmasklocal  = N_VConstrMaskLocal_Petsc;
+  v->ops->nvminquotientlocal = N_VMinQuotientLocal_Petsc;
+  v->ops->nvwsqrsumlocal     = N_VWSqrSumLocal_Petsc;
+  v->ops->nvwsqrsummasklocal = N_VWSqrSumMaskLocal_Petsc;
   
   /* Create content */
   content = NULL;
-  content = (N_VectorContent_Petsc) malloc(sizeof(struct _N_VectorContent_Petsc));
-  if (content == NULL) {
-    free(ops);
-    free(v);
-    return(NULL);
-  }
+  content = (N_VectorContent_Petsc) malloc(sizeof *content);
+  if (content == NULL) { N_VDestroy(v); return(NULL); }
 
-  /* Attach lengths and communicator */
+  /* Attach content */
+  v->content = content;
+
+  /* Initialize content */
   content->local_length  = local_length;
   content->global_length = global_length;
   content->comm          = comm;
   content->own_data      = SUNFALSE;
   content->pvec          = NULL;
-
-  /* Attach content and ops */
-  v->content = content;
-  v->ops     = ops;
 
   return(v);
 }
@@ -372,99 +351,32 @@ void N_VPrintFile_Petsc(N_Vector x, const char fname[])
 N_Vector N_VCloneEmpty_Petsc(N_Vector w)
 {
   N_Vector v;
-  N_Vector_Ops ops;
   N_VectorContent_Petsc content;
 
   if (w == NULL) return(NULL);
 
   /* Create vector */
   v = NULL;
-  v = (N_Vector) malloc(sizeof *v);
+  v = N_VNewEmpty();
   if (v == NULL) return(NULL);
 
-  /* Create vector operation structure */
-  ops = NULL;
-  ops = (N_Vector_Ops) malloc(sizeof(struct _generic_N_Vector_Ops));
-  if (ops == NULL) {
-    free(v);
-    return(NULL);
-  }
+  /* Attach operations */
+  if (N_VCopyOps(w, v)) { N_VDestroy(v); return(NULL); }
 
-  ops->nvgetvectorid     = w->ops->nvgetvectorid;
-  ops->nvclone           = w->ops->nvclone;
-  ops->nvcloneempty      = w->ops->nvcloneempty;
-  ops->nvdestroy         = w->ops->nvdestroy;
-  ops->nvspace           = w->ops->nvspace;
-  ops->nvgetarraypointer = w->ops->nvgetarraypointer;
-  ops->nvsetarraypointer = w->ops->nvsetarraypointer;
-  ops->nvgetcommunicator = w->ops->nvgetcommunicator;
-  ops->nvgetlength       = w->ops->nvgetlength;
-
-  /* standard vector operations */
-  ops->nvlinearsum    = w->ops->nvlinearsum;
-  ops->nvconst        = w->ops->nvconst;
-  ops->nvprod         = w->ops->nvprod;
-  ops->nvdiv          = w->ops->nvdiv;
-  ops->nvscale        = w->ops->nvscale;
-  ops->nvabs          = w->ops->nvabs;
-  ops->nvinv          = w->ops->nvinv;
-  ops->nvaddconst     = w->ops->nvaddconst;
-  ops->nvdotprod      = w->ops->nvdotprod;
-  ops->nvmaxnorm      = w->ops->nvmaxnorm;
-  ops->nvwrmsnormmask = w->ops->nvwrmsnormmask;
-  ops->nvwrmsnorm     = w->ops->nvwrmsnorm;
-  ops->nvmin          = w->ops->nvmin;
-  ops->nvwl2norm      = w->ops->nvwl2norm;
-  ops->nvl1norm       = w->ops->nvl1norm;
-  ops->nvcompare      = w->ops->nvcompare;
-  ops->nvinvtest      = w->ops->nvinvtest;
-  ops->nvconstrmask   = w->ops->nvconstrmask;
-  ops->nvminquotient  = w->ops->nvminquotient;
-
-  /* fused vector operations */
-  ops->nvlinearcombination = w->ops->nvlinearcombination;
-  ops->nvscaleaddmulti     = w->ops->nvscaleaddmulti;
-  ops->nvdotprodmulti      = w->ops->nvdotprodmulti;
-
-  /* vector array operations */
-  ops->nvlinearsumvectorarray         = w->ops->nvlinearsumvectorarray;
-  ops->nvscalevectorarray             = w->ops->nvscalevectorarray;
-  ops->nvconstvectorarray             = w->ops->nvconstvectorarray;
-  ops->nvwrmsnormvectorarray          = w->ops->nvwrmsnormvectorarray;
-  ops->nvwrmsnormmaskvectorarray      = w->ops->nvwrmsnormmaskvectorarray;
-  ops->nvscaleaddmultivectorarray     = w->ops->nvscaleaddmultivectorarray;
-  ops->nvlinearcombinationvectorarray = w->ops->nvlinearcombinationvectorarray;
-
-  /* local reduction kernels */
-  ops->nvdotprodlocal     = w->ops->nvdotprodlocal;
-  ops->nvmaxnormlocal     = w->ops->nvmaxnormlocal;
-  ops->nvminlocal         = w->ops->nvminlocal;
-  ops->nvl1normlocal      = w->ops->nvl1normlocal;
-  ops->nvinvtestlocal     = w->ops->nvinvtestlocal;
-  ops->nvconstrmasklocal  = w->ops->nvconstrmasklocal;
-  ops->nvminquotientlocal = w->ops->nvminquotientlocal;
-  ops->nvwsqrsumlocal     = w->ops->nvwsqrsumlocal;
-  ops->nvwsqrsummasklocal = w->ops->nvwsqrsummasklocal;
-  
   /* Create content */
   content = NULL;
-  content = (N_VectorContent_Petsc) malloc(sizeof(struct _N_VectorContent_Petsc));
-  if (content == NULL) {
-    free(ops);
-    free(v);
-    return(NULL);
-  }
+  content = (N_VectorContent_Petsc) malloc(sizeof *content);
+  if (content == NULL) { N_VDestroy(v); return(NULL); }
 
-  /* Attach lengths and communicator */
+  /* Attach content */
+  v->content = content;
+
+  /* Initialize content */
   content->local_length  = NV_LOCLENGTH_PTC(w);
   content->global_length = NV_GLOBLENGTH_PTC(w);
   content->comm          = NV_COMM_PTC(w);
   content->own_data      = SUNFALSE;
   content->pvec          = NULL;
-
-  /* Attach content and ops */
-  v->content = content;
-  v->ops     = ops;
 
   return(v);
 }
@@ -481,18 +393,9 @@ N_Vector N_VClone_Petsc(N_Vector w)
   if (v == NULL)
     return(NULL);
 
-  /* Create data */
-
-  /* Allocate empty PETSc vector */
-  pvec = (Vec) malloc(sizeof(Vec));
-  if(pvec == NULL) {
-    N_VDestroy_Petsc(v);
-    return(NULL);
-  }
-
-  /* ierr = */
+  /* Duplicate vector */
   VecDuplicate(wvec, &pvec);
-  if(pvec == NULL) {
+  if (pvec == NULL) {
     N_VDestroy_Petsc(v);
     return(NULL);
   }
@@ -506,17 +409,21 @@ N_Vector N_VClone_Petsc(N_Vector w)
 
 void N_VDestroy_Petsc(N_Vector v)
 {
-  if (NV_OWN_DATA_PTC(v) == SUNTRUE) {
-    VecDestroy(&(NV_PVEC_PTC(v)));
-    NV_PVEC_PTC(v) = NULL;
+  if (v == NULL) return;
+
+  /* free content */
+  if (v->content != NULL) {
+    if (NV_OWN_DATA_PTC(v) && NV_PVEC_PTC(v) != NULL) {
+      VecDestroy(&(NV_PVEC_PTC(v)));
+      NV_PVEC_PTC(v) = NULL;
+    }
+    free(v->content);
+    v->content = NULL;
   }
 
-  free(v->content);
-  v->content = NULL;
-  free(v->ops);
-  v->ops = NULL;
-  free(v);
-  v = NULL;
+  /* free ops and vector */
+  if (v->ops != NULL) { free(v->ops); v->ops = NULL; }
+  free(v); v = NULL;
 
   return;
 }
@@ -762,7 +669,7 @@ realtype N_VWrmsNorm_Petsc(N_Vector x, N_Vector w)
   realtype global_sum;
   sunindextype N_global = NV_GLOBLENGTH_PTC(x);
   realtype sum = N_VWSqrSumLocal_Petsc(x, w);
-  SUNMPI_Allreduce_scalar(sum, &global_sum, SUNMPI_SUM, NV_COMM_PTC(x));
+  (void) MPI_Allreduce(&sum, &global_sum, 1, MPI_SUNREALTYPE, MPI_SUM, NV_COMM_PTC(x));
   return (SUNRsqrt(global_sum/N_global)); 
 }
 
@@ -798,7 +705,7 @@ realtype N_VWrmsNormMask_Petsc(N_Vector x, N_Vector w, N_Vector id)
   realtype global_sum;
   sunindextype N_global = NV_GLOBLENGTH_PTC(x);
   realtype sum = N_VWSqrSumMaskLocal_Petsc(x, w, id);
-  SUNMPI_Allreduce_scalar(sum, &global_sum, SUNMPI_SUM, NV_COMM_PTC(x));
+  (void) MPI_Allreduce(&sum, &global_sum, 1, MPI_SUNREALTYPE, MPI_SUM, NV_COMM_PTC(x));
   return (SUNRsqrt(global_sum/N_global));
 }
 
@@ -832,7 +739,7 @@ realtype N_VWL2Norm_Petsc(N_Vector x, N_Vector w)
 {
   realtype global_sum;
   realtype sum = N_VWSqrSumLocal_Petsc(x, w);
-  SUNMPI_Allreduce_scalar(sum, &global_sum, SUNMPI_SUM, NV_COMM_PTC(x));
+  (void) MPI_Allreduce(&sum, &global_sum, 1, MPI_SUNREALTYPE, MPI_SUM, NV_COMM_PTC(x));
   return (SUNRsqrt(global_sum));
 }
 
@@ -913,7 +820,7 @@ booleantype N_VInvTest_Petsc(N_Vector x, N_Vector z)
 {
   realtype val2;
   realtype val = (N_VInvTestLocal_Petsc(x, z)) ? ONE : ZERO;
-  SUNMPI_Allreduce_scalar(val, &val2, SUNMPI_MIN, NV_COMM_PTC(x));
+  (void) MPI_Allreduce(&val, &val2, 1, MPI_SUNREALTYPE, MPI_MIN, NV_COMM_PTC(x));
   if (val2 == ZERO)
     return(SUNFALSE);
   else
@@ -966,7 +873,7 @@ booleantype N_VConstrMask_Petsc(N_Vector c, N_Vector x, N_Vector m)
 {
   realtype temp2;
   realtype temp = (N_VConstrMaskLocal_Petsc(c, x, m)) ? ZERO : ONE;
-  SUNMPI_Allreduce_scalar(temp, &temp2, SUNMPI_MAX, NV_COMM_PTC(x));
+  (void) MPI_Allreduce(&temp, &temp2, 1, MPI_SUNREALTYPE, MPI_MAX, NV_COMM_PTC(x));
   return (temp2 == ONE) ? SUNFALSE : SUNTRUE;
 }
 
@@ -1007,7 +914,7 @@ realtype N_VMinQuotient_Petsc(N_Vector num, N_Vector denom)
 {
   PetscReal gmin;
   realtype minval = N_VMinQuotientLocal_Petsc(num, denom);
-  SUNMPI_Allreduce_scalar(minval, &gmin, SUNMPI_MIN, NV_COMM_PTC(num));
+  (void) MPI_Allreduce(&minval, &gmin, 1, MPI_SUNREALTYPE, MPI_MIN, NV_COMM_PTC(num));
   return(gmin);
 }
 
@@ -1052,6 +959,7 @@ int N_VLinearCombination_Petsc(int nvec, realtype* c, N_Vector* X, N_Vector z)
    */
   if ((X[0] == z) && (c[0] == ONE)) {
     VecMAXPY(zv, nvec-1, c+1, xv+1);
+    free(xv);
     return(0);
   }
 
@@ -1061,6 +969,7 @@ int N_VLinearCombination_Petsc(int nvec, realtype* c, N_Vector* X, N_Vector z)
   if (X[0] == z) {
     VecScale(zv, c[0]);
     VecMAXPY(zv, nvec-1, c+1, xv+1);
+    free(xv);
     return(0);
   }
 
@@ -1069,6 +978,8 @@ int N_VLinearCombination_Petsc(int nvec, realtype* c, N_Vector* X, N_Vector z)
    */
   VecAXPBY(zv, c[0], 0.0, xv[0]);
   VecMAXPY(zv, nvec-1, c+1, xv+1);
+  free(xv);
+
   return(0);
 }
 
@@ -1145,6 +1056,8 @@ int N_VDotProdMulti_Petsc(int nvec, N_Vector x, N_Vector* Y, realtype* dotprods)
   xv = NV_PVEC_PTC(x);
 
   VecMDot(xv, nvec, yv, dotprods);
+  free(yv);
+
   return(0);
 }
 
@@ -1305,12 +1218,12 @@ int N_VWrmsNormVectorArray_Petsc(int nvec, N_Vector* X, N_Vector* W, realtype* n
     VecRestoreArray(NV_PVEC_PTC(X[i]), &xd);
     VecRestoreArray(NV_PVEC_PTC(W[i]), &wd);
   }
-  retval = SUNMPI_Allreduce(nrm, nvec, SUNMPI_SUM, comm);
+  retval = MPI_Allreduce(MPI_IN_PLACE, nrm, nvec, MPI_SUNREALTYPE, MPI_SUM, comm);
 
   for (i=0; i<nvec; i++)
     nrm[i] = SUNRsqrt(nrm[i]/Ng);
 
-  return retval == SUNMPI_SUCCESS ? 0 : -1;
+  return retval == MPI_SUCCESS ? 0 : -1;
 }
 
 
@@ -1351,12 +1264,12 @@ int N_VWrmsNormMaskVectorArray_Petsc(int nvec, N_Vector* X, N_Vector* W,
   }
   VecRestoreArray(NV_PVEC_PTC(id), &idd);
 
-  retval = SUNMPI_Allreduce(nrm, nvec, SUNMPI_SUM, comm);
+  retval = MPI_Allreduce(MPI_IN_PLACE, nrm, nvec, MPI_SUNREALTYPE, MPI_SUM, comm);
 
   for (i=0; i<nvec; i++)
     nrm[i] = SUNRsqrt(nrm[i]/Ng);
 
-  return retval == SUNMPI_SUCCESS ? 0 : -1;
+  return retval == MPI_SUCCESS ? 0 : -1;
 }
 
 

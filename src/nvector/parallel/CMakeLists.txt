@@ -15,6 +15,11 @@
 
 INSTALL(CODE "MESSAGE(\"\nInstall NVECTOR_PARALLEL\n\")")
 
+# Add F90 module if F2003 interface is enabled
+IF(F2003_FOUND AND F2003_INTERFACE_ENABLE)
+  ADD_SUBDIRECTORY(fmod)
+ENDIF(F2003_FOUND AND F2003_INTERFACE_ENABLE)
+
 IF(MPI_C_COMPILER)
   # use MPI wrapper as the compiler
   SET(CMAKE_C_COMPILER ${MPI_C_COMPILER})
@@ -29,8 +34,8 @@ SET(nvecparallel_SOURCES nvector_parallel.c)
 # Add variable shared_SOURCES with the common SUNDIALS sources which will
 # also be included in the NVECPARALLEL library
 SET(shared_SOURCES
+  ${sundials_SOURCE_DIR}/src/sundials/sundials_nvector.c
   ${sundials_SOURCE_DIR}/src/sundials/sundials_math.c
-  ${sundials_SOURCE_DIR}/src/sundials/sundials_mpi.c
   )
 
 # Add variable nvecparallel_HEADERS with the exported NVECPARALLEL header files

@@ -136,7 +136,7 @@ SUNDIALS_EXPORT int ARKStepSetFixedStepBounds(void *arkode_mem,
 SUNDIALS_EXPORT int ARKStepSetAdaptivityMethod(void *arkode_mem,
                                                int imethod,
                                                int idefault, int pq,
-                                               realtype *adapt_params);
+                                               realtype adapt_params[3]);
 SUNDIALS_EXPORT int ARKStepSetAdaptivityFn(void *arkode_mem,
                                            ARKAdaptFn hfun,
                                            void *h_data);
@@ -222,6 +222,7 @@ SUNDIALS_EXPORT int ARKStepSetMassTimes(void *arkode_mem,
                                         ARKLsMassTimesSetupFn msetup,
                                         ARKLsMassTimesVecFn mtimes,
                                         void *mtimes_data);
+SUNDIALS_EXPORT int ARKStepSetLinSysFn(void *arkode_mem, ARKLsLinSysFn linsys);
 
 /* Integrate the ODE over an interval in t */
 SUNDIALS_EXPORT int ARKStepEvolve(void *arkode_mem, realtype tout,

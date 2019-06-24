@@ -561,16 +561,14 @@ void FIDA_FREE(void)
   N_VSetArrayPointer(NULL, F2C_IDA_ypvec);
   N_VDestroy(F2C_IDA_ypvec);
   if (F2C_IDA_ewtvec != NULL) {
-    N_VSetArrayPointer(NULL, F2C_IDA_ewtvec);
     N_VDestroy(F2C_IDA_ewtvec);
   }
   if (F2C_IDA_matrix)
     SUNMatDestroy(F2C_IDA_matrix);
   if (F2C_IDA_linsol)
     SUNLinSolFree(F2C_IDA_linsol);
-  /* already freed by IDAFree */
   if (F2C_IDA_nonlinsol)
-    F2C_IDA_nonlinsol = NULL;
+    SUNNonlinSolFree(F2C_IDA_nonlinsol);
   return;
 }
 

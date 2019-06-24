@@ -68,6 +68,8 @@ typedef enum {
   SUNDIALS_NVEC_OPENMPDEV,
   SUNDIALS_NVEC_TRILINOS,
   SUNDIALS_NVEC_MANYVECTOR,
+  SUNDIALS_NVEC_MPIMANYVECTOR,
+  SUNDIALS_NVEC_MPIPLUSX,
   SUNDIALS_NVEC_CUSTOM
 } N_Vector_ID;
 
@@ -77,10 +79,10 @@ typedef enum {
  * ----------------------------------------------------------------- */
 
 /* Forward reference for pointer to N_Vector_Ops object */
-typedef struct _generic_N_Vector_Ops *N_Vector_Ops;
+typedef _SUNDIALS_STRUCT_ _generic_N_Vector_Ops *N_Vector_Ops;
 
 /* Forward reference for pointer to N_Vector object */
-typedef struct _generic_N_Vector *N_Vector;
+typedef _SUNDIALS_STRUCT_ _generic_N_Vector *N_Vector;
 
 /* Define array of N_Vectors */
 typedef N_Vector *N_Vector_S;
@@ -150,13 +152,17 @@ struct _generic_N_Vector_Ops {
    operations corresponding to that implementation. */
 struct _generic_N_Vector {
   void *content;
-  struct _generic_N_Vector_Ops *ops;
+  N_Vector_Ops ops;
 };
 
 
 /* -----------------------------------------------------------------
  * Functions exported by NVECTOR module
  * ----------------------------------------------------------------- */
+
+SUNDIALS_EXPORT N_Vector N_VNewEmpty();
+SUNDIALS_EXPORT void N_VFreeEmpty(N_Vector v);
+SUNDIALS_EXPORT int N_VCopyOps(N_Vector w, N_Vector v);
 
 SUNDIALS_EXPORT N_Vector_ID N_VGetVectorID(N_Vector w);
 SUNDIALS_EXPORT N_Vector N_VClone(N_Vector w);
@@ -190,7 +196,7 @@ SUNDIALS_EXPORT booleantype N_VInvTest(N_Vector x, N_Vector z);
 SUNDIALS_EXPORT booleantype N_VConstrMask(N_Vector c, N_Vector x, N_Vector m);
 SUNDIALS_EXPORT realtype N_VMinQuotient(N_Vector num, N_Vector denom);
 
-/* fused vector operations */
+/* OPTIONAL fused vector operations */
 SUNDIALS_EXPORT int N_VLinearCombination(int nvec, realtype* c, N_Vector* X,
                                          N_Vector z);
 
@@ -200,7 +206,7 @@ SUNDIALS_EXPORT int N_VScaleAddMulti(int nvec, realtype* a, N_Vector x,
 SUNDIALS_EXPORT int N_VDotProdMulti(int nvec, N_Vector x, N_Vector* Y,
                                     realtype* dotprods);
 
-/* vector array operations */
+/* OPTIONAL vector array operations */
 SUNDIALS_EXPORT int N_VLinearSumVectorArray(int nvec,
                                             realtype a, N_Vector* X,
                                             realtype b, N_Vector* Y,
@@ -242,9 +248,9 @@ SUNDIALS_EXPORT realtype N_VMinQuotientLocal(N_Vector num, N_Vector denom);
  * Additional functions exported by NVECTOR module
  * ----------------------------------------------------------------- */
 
-SUNDIALS_EXPORT N_Vector *N_VCloneEmptyVectorArray(int count, N_Vector w);
-SUNDIALS_EXPORT N_Vector *N_VCloneVectorArray(int count, N_Vector w);
-SUNDIALS_EXPORT void N_VDestroyVectorArray(N_Vector *vs, int count);
+SUNDIALS_EXPORT N_Vector* N_VCloneEmptyVectorArray(int count, N_Vector w);
+SUNDIALS_EXPORT N_Vector* N_VCloneVectorArray(int count, N_Vector w);
+SUNDIALS_EXPORT void N_VDestroyVectorArray(N_Vector* vs, int count);
 
 #ifdef __cplusplus
 }

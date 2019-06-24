@@ -491,9 +491,8 @@ void FCV_FREE ()
     SUNMatDestroy(F2C_CVODE_matrix);
   if (F2C_CVODE_linsol)
     SUNLinSolFree(F2C_CVODE_linsol);
-  /* already freed by CVodeFree */
   if (F2C_CVODE_nonlinsol)
-    F2C_CVODE_nonlinsol = NULL;
+    SUNNonlinSolFree(F2C_CVODE_nonlinsol);
   return;
 }
 

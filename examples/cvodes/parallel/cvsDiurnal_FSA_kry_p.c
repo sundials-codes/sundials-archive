@@ -311,9 +311,8 @@ int main(int argc, char *argv[])
     if (check_retval((void *)pbar, "malloc", 2, my_pe)) MPI_Abort(comm, 1);
     for (is=0; is<NS; is++) pbar[is] = data->p[plist[is]]; 
 
-    uS = N_VCloneVectorArray_Parallel(NS, u);
-    if (check_retval((void *)uS, "N_VCloneVectorArray_Parallel", 0, my_pe))
-                                                          MPI_Abort(comm, 1);
+    uS = N_VCloneVectorArray(NS, u);
+    if (check_retval((void *)uS, "N_VCloneVectorArray", 0, my_pe)) MPI_Abort(comm, 1);
     for (is = 0; is < NS; is++)
       N_VConst(ZERO,uS[is]);
 
@@ -374,9 +373,9 @@ int main(int argc, char *argv[])
   if (my_pe == 0) PrintFinalStats(cvode_mem, sensi, err_con, sensi_meth);
 
   /* Free memory */
-  N_VDestroy_Parallel(u);
+  N_VDestroy(u);
   if (sensi) {
-    N_VDestroyVectorArray_Parallel(uS, NS);
+    N_VDestroyVectorArray(uS, NS);
     free(plist);
     free(pbar);
   }
@@ -405,8 +404,8 @@ static int f(realtype t, N_Vector u, N_Vector udot, void *user_data)
   realtype *udata, *dudata;
   UserData data;
 
-  udata = N_VGetArrayPointer_Parallel(u);
-  dudata = N_VGetArrayPointer_Parallel(udot);
+  udata = N_VGetArrayPointer(u);
+  dudata = N_VGetArrayPointer(udot);
   data = (UserData) user_data;
 
   /* Call ucomm to do inter-processor communicaiton */
@@ -440,7 +439,7 @@ static int Precond(realtype tn, N_Vector u, N_Vector fu,
   P = data->P;
   Jbd = data->Jbd;
   pivot = data->pivot;
-  udata = N_VGetArrayPointer_Parallel(u);
+  udata = N_VGetArrayPointer(u);
   isuby = data->isuby;
   nvmxsub = data->nvmxsub;
 
@@ -533,7 +532,7 @@ static int PSolve(realtype tn, N_Vector u, N_Vector fu,
   N_VScale(RCONST(1.0), r, z);
 
   nvmxsub = data->nvmxsub;
-  zdata = N_VGetArrayPointer_Parallel(z);
+  zdata = N_VGetArrayPointer(z);
 
   for (lx = 0; lx < MXSUB; lx++) {
     for (ly = 0; ly < MYSUB; ly++) {
@@ -692,7 +691,7 @@ static void SetInitialProfiles(N_Vector u, UserData data)
   realtype *udata;
 
   /* Set pointer to data array in vector u */
-  udata = N_VGetArrayPointer_Parallel(u);
+  udata = N_VGetArrayPointer(u);
 
   /* Get mesh spacings, and subgrid indices for this PE */
   dx = data->dx;         dy = data->dy;
@@ -735,12 +734,12 @@ static void BSend(MPI_Comm comm, int my_pe, int isubx,
 
   /* If isuby > 0, send data from bottom x-line of u */
   if (isuby != 0)
-    MPI_Send(&udata[0], dsizex, PVEC_REAL_MPI_TYPE, my_pe-NPEX, 0, comm);
+    MPI_Send(&udata[0], dsizex, MPI_SUNREALTYPE, my_pe-NPEX, 0, comm);
 
   /* If isuby < NPEY-1, send data from top x-line of u */
   if (isuby != NPEY-1) {
     offsetu = (MYSUB-1)*dsizex;
-    MPI_Send(&udata[offsetu], dsizex, PVEC_REAL_MPI_TYPE, my_pe+NPEX, 0, comm);
+    MPI_Send(&udata[offsetu], dsizex, MPI_SUNREALTYPE, my_pe+NPEX, 0, comm);
   }
 
   /* If isubx > 0, send data from left y-line of u (via bufleft) */
@@ -751,7 +750,7 @@ static void BSend(MPI_Comm comm, int my_pe, int isubx,
       for (i = 0; i < NVARS; i++)
         bufleft[offsetbuf+i] = udata[offsetu+i];
     }
-    MPI_Send(&bufleft[0], dsizey, PVEC_REAL_MPI_TYPE, my_pe-1, 0, comm);   
+    MPI_Send(&bufleft[0], dsizey, MPI_SUNREALTYPE, my_pe-1, 0, comm);   
   }
 
   /* If isubx < NPEX-1, send data from right y-line of u (via bufright) */
@@ -762,7 +761,7 @@ static void BSend(MPI_Comm comm, int my_pe, int isubx,
       for (i = 0; i < NVARS; i++)
         bufright[offsetbuf+i] = udata[offsetu+i];
     }
-    MPI_Send(&bufright[0], dsizey, PVEC_REAL_MPI_TYPE, my_pe+1, 0, comm);   
+    MPI_Send(&bufright[0], dsizey, MPI_SUNREALTYPE, my_pe+1, 0, comm);   
   }
 }
  
@@ -787,25 +786,25 @@ static void BRecvPost(MPI_Comm comm, MPI_Request request[], int my_pe,
 
   /* If isuby > 0, receive data for bottom x-line of uext */
   if (isuby != 0)
-    MPI_Irecv(&uext[NVARS], dsizex, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&uext[NVARS], dsizex, MPI_SUNREALTYPE,
               my_pe-NPEX, 0, comm, &request[0]);
 
   /* If isuby < NPEY-1, receive data for top x-line of uext */
   if (isuby != NPEY-1) {
     offsetue = NVARS*(1 + (MYSUB+1)*(MXSUB+2));
-    MPI_Irecv(&uext[offsetue], dsizex, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&uext[offsetue], dsizex, MPI_SUNREALTYPE,
               my_pe+NPEX, 0, comm, &request[1]);
   }
   
   /* If isubx > 0, receive data for left y-line of uext (via bufleft) */
   if (isubx != 0) {
-    MPI_Irecv(&bufleft[0], dsizey, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&bufleft[0], dsizey, MPI_SUNREALTYPE,
               my_pe-1, 0, comm, &request[2]);
   }
   
   /* If isubx < NPEX-1, receive data for right y-line of uext (via bufright) */
   if (isubx != NPEX-1) {
-    MPI_Irecv(&bufright[0], dsizey, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&bufright[0], dsizey, MPI_SUNREALTYPE,
               my_pe+1, 0, comm, &request[3]);
   }
 }
@@ -878,7 +877,7 @@ static void ucomm(realtype t, N_Vector u, UserData data)
   sunindextype nvmxsub, nvmysub;
   MPI_Request request[4];
 
-  udata = N_VGetArrayPointer_Parallel(u);
+  udata = N_VGetArrayPointer(u);
 
   /* Get comm, my_pe, subgrid indices, data sizes, extended array uext */
   comm = data->comm;  my_pe = data->my_pe;
@@ -1049,14 +1048,14 @@ static void PrintOutput(void *cvode_mem, int my_pe, MPI_Comm comm,
   MPI_Status status;
 
   npelast = NPEX*NPEY - 1;
-  udata = N_VGetArrayPointer_Parallel(u);
+  udata = N_VGetArrayPointer(u);
 
   /* Send c at top right mesh point to PE 0 */
   if (my_pe == npelast) {
     i0 = NVARS*MXSUB*MYSUB - 2;
     i1 = i0 + 1;
     if (npelast != 0)
-      MPI_Send(&udata[i0], 2, PVEC_REAL_MPI_TYPE, 0, 0, comm);
+      MPI_Send(&udata[i0], 2, MPI_SUNREALTYPE, 0, 0, comm);
     else {
       tempu[0] = udata[i0];
       tempu[1] = udata[i1];
@@ -1068,7 +1067,7 @@ static void PrintOutput(void *cvode_mem, int my_pe, MPI_Comm comm,
   if (my_pe == 0) {
 
     if (npelast != 0)
-      MPI_Recv(&tempu[0], 2, PVEC_REAL_MPI_TYPE, npelast, 0, comm, &status);
+      MPI_Recv(&tempu[0], 2, MPI_SUNREALTYPE, npelast, 0, comm, &status);
 
     retval = CVodeGetNumSteps(cvode_mem, &nst);
     check_retval(&retval, "CVodeGetNumSteps", 1, my_pe);
@@ -1120,14 +1119,14 @@ static void PrintOutputS(int my_pe, MPI_Comm comm, N_Vector *uS)
 
   npelast = NPEX*NPEY - 1;
 
-  sdata = N_VGetArrayPointer_Parallel(uS[0]);
+  sdata = N_VGetArrayPointer(uS[0]);
 
   /* Send s1 at top right mesh point to PE 0 */
   if (my_pe == npelast) {
     i0 = NVARS*MXSUB*MYSUB - 2;
     i1 = i0 + 1;
     if (npelast != 0)
-      MPI_Send(&sdata[i0], 2, PVEC_REAL_MPI_TYPE, 0, 0, comm);
+      MPI_Send(&sdata[i0], 2, MPI_SUNREALTYPE, 0, 0, comm);
     else {
       temps[0] = sdata[i0];
       temps[1] = sdata[i1];
@@ -1137,7 +1136,7 @@ static void PrintOutputS(int my_pe, MPI_Comm comm, N_Vector *uS)
   /* On PE 0, receive s1 at top right, then print sampled sensitivity values */ 
   if (my_pe == 0) {
     if (npelast != 0)
-      MPI_Recv(&temps[0], 2, PVEC_REAL_MPI_TYPE, npelast, 0, comm, &status);
+      MPI_Recv(&temps[0], 2, MPI_SUNREALTYPE, npelast, 0, comm, &status);
     printf("                                ----------------------------------------\n");
     printf("                                Sensitivity 1  ");
 #if defined(SUNDIALS_EXTENDED_PRECISION)
@@ -1157,14 +1156,14 @@ static void PrintOutputS(int my_pe, MPI_Comm comm, N_Vector *uS)
 #endif
   }
 
-  sdata = N_VGetArrayPointer_Parallel(uS[1]);
+  sdata = N_VGetArrayPointer(uS[1]);
 
   /* Send s2 at top right mesh point to PE 0 */
   if (my_pe == npelast) {
     i0 = NVARS*MXSUB*MYSUB - 2;
     i1 = i0 + 1;
     if (npelast != 0)
-      MPI_Send(&sdata[i0], 2, PVEC_REAL_MPI_TYPE, 0, 0, comm);
+      MPI_Send(&sdata[i0], 2, MPI_SUNREALTYPE, 0, 0, comm);
     else {
       temps[0] = sdata[i0];
       temps[1] = sdata[i1];
@@ -1174,7 +1173,7 @@ static void PrintOutputS(int my_pe, MPI_Comm comm, N_Vector *uS)
   /* On PE 0, receive s2 at top right, then print sampled sensitivity values */ 
   if (my_pe == 0) {
     if (npelast != 0)
-      MPI_Recv(&temps[0], 2, PVEC_REAL_MPI_TYPE, npelast, 0, comm, &status);
+      MPI_Recv(&temps[0], 2, MPI_SUNREALTYPE, npelast, 0, comm, &status);
     printf("                                ----------------------------------------\n");
     printf("                                Sensitivity 2  ");
 #if defined(SUNDIALS_EXTENDED_PRECISION)

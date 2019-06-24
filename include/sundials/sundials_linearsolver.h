@@ -78,10 +78,10 @@ typedef enum {
  * ----------------------------------------------------------------- */
 
 /* Forward reference for pointer to SUNLinearSolver_Ops object */
-typedef struct _generic_SUNLinearSolver_Ops *SUNLinearSolver_Ops;
+typedef _SUNDIALS_STRUCT_ _generic_SUNLinearSolver_Ops *SUNLinearSolver_Ops;
 
 /* Forward reference for pointer to SUNLinearSolver object */
-typedef struct _generic_SUNLinearSolver *SUNLinearSolver;
+typedef _SUNDIALS_STRUCT_ _generic_SUNLinearSolver *SUNLinearSolver;
 
 /* Structure containing function pointers to linear solver operations */
 struct _generic_SUNLinearSolver_Ops {
@@ -108,13 +108,17 @@ struct _generic_SUNLinearSolver_Ops {
    operations corresponding to that implementation. */
 struct _generic_SUNLinearSolver {
   void *content;
-  struct _generic_SUNLinearSolver_Ops *ops;
+  SUNLinearSolver_Ops ops;
 };
 
 
 /* -----------------------------------------------------------------
  * Functions exported by SUNLinearSolver module
  * ----------------------------------------------------------------- */
+
+SUNDIALS_EXPORT SUNLinearSolver SUNLinSolNewEmpty();
+
+SUNDIALS_EXPORT void SUNLinSolFreeEmpty(SUNLinearSolver S);
 
 SUNDIALS_EXPORT SUNLinearSolver_Type SUNLinSolGetType(SUNLinearSolver S);
 

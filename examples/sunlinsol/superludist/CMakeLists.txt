@@ -38,7 +38,7 @@ IF(MPI_C_COMPILER AND MPI_CXX_COMPILER)
   SET(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 ENDIF()
 
-IF(SUPERLUDIST_OpenMP AND OPENMP_ENABLE AND OPENMP_FOUND)
+IF(SUPERLUDIST_OpenMP)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 ENDIF()
@@ -83,7 +83,6 @@ FOREACH(example_tuple ${sunlinsol_superludist_examples})
           sundials_sunlinsolsuperludist_static
           sundials_sunmatrixslunrloc_static
           sundials_sunmatrixdense_static
-          sundials_sunmatrixsparse_static
           sundials_nvecparallel_static
           sundials_nvecserial_static)
     ELSE()
@@ -92,7 +91,6 @@ FOREACH(example_tuple ${sunlinsol_superludist_examples})
           sundials_sunlinsolsuperludist_shared
           sundials_sunmatrixslunrloc_shared
           sundials_sunmatrixdense_shared
-          sundials_sunmatrixsparse_shared
           sundials_nvecparallel_shared
           sundials_nvecserial_shared)
     ENDIF()

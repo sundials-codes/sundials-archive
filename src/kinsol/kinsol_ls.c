@@ -63,15 +63,15 @@ int KINSetLinearSolver(void *kinmem, SUNLinearSolver LS, SUNMatrix A)
   kin_mem = (KINMem) kinmem;
 
   /* Test if solver is compatible with LS interface */
-  if ( (LS->ops->gettype == NULL) ||
-       (LS->ops->initialize == NULL) ||
-       (LS->ops->setup == NULL) ||
-       (LS->ops->solve == NULL) ) {
+  if ( (LS->ops->gettype == NULL) || (LS->ops->solve == NULL) ) {
     KINProcessError(kin_mem, KINLS_ILL_INPUT, "KINLS",
                    "KINSetLinearSolver",
                    "LS object is missing a required operation");
     return(KINLS_ILL_INPUT);
   }
+
+  /* Retrieve the LS type */
+  LSType = SUNLinSolGetType(LS);
 
   /* check for required vector operations for KINLS interface */
   if ( (kin_mem->kin_vtemp1->ops->nvconst == NULL) ||
@@ -81,8 +81,15 @@ int KINSetLinearSolver(void *kinmem, SUNLinearSolver LS, SUNMatrix A)
     return(KINLS_ILL_INPUT);
   }
 
-  /* Retrieve the LS type */
-  LSType = SUNLinSolGetType(LS);
+  if ( ((LSType == SUNLINEARSOLVER_ITERATIVE) ||
+        (LSType == SUNLINEARSOLVER_MATRIX_ITERATIVE)) &&
+       (LS->ops->setscalingvectors == NULL) ) {
+    if (kin_mem->kin_vtemp1->ops->nvgetlength == NULL) {
+      KINProcessError(kin_mem, KINLS_ILL_INPUT, "KINLS",
+                      "KINSetLinearSolver", MSG_LS_BAD_NVECTOR);
+      return(KINLS_ILL_INPUT);
+    }
+  }
 
   /* Check for compatible LS type, matrix and "atimes" support */
   if ((LSType == SUNLINEARSOLVER_ITERATIVE) && (LS->ops->setatimes == NULL)) {
@@ -1047,17 +1054,15 @@ int kinLsInitialize(KINMem kin_mem)
        <=> \sum_{i=0}^{n-1} (b - A x_i)^2 < tol^2 / fs_mean^2
        <=> || b - A x ||_2 < tol / fs_mean
        <=> || b - A x ||_2 < tol * tol_fac
-     So we compute tol_fac = 1 / ||fscale||_RMS = sqrt(n) / ||fscale||_2,
-     for scaling desired tolerances */
+     So we compute tol_fac = sqrt(N) / ||fscale||_L2 for scaling desired tolerances */
   if ( ((LSType == SUNLINEARSOLVER_ITERATIVE) ||
         (LSType == SUNLINEARSOLVER_MATRIX_ITERATIVE)) &&
        (kinls_mem->LS->ops->setscalingvectors == NULL) ) {
 
-    /* compute tol_fac = ||1||_2 / ||fscale||_2 */
     N_VConst(ONE, kin_mem->kin_vtemp1);
-    kinls_mem->tol_fac = SUNRsqrt( N_VDotProd(kin_mem->kin_vtemp1,
-                                              kin_mem->kin_vtemp1) )
-      / SUNRsqrt( N_VDotProd(kin_mem->kin_fscale, kin_mem->kin_fscale) );
+    kinls_mem->tol_fac = SUNRsqrt(N_VGetLength(kin_mem->kin_vtemp1))
+                       / N_VWL2Norm(kin_mem->kin_fscale, kin_mem->kin_vtemp1);
+
   } else {
     kinls_mem->tol_fac = ONE;
   }
@@ -1084,20 +1089,21 @@ int kinLsSetup(KINMem kin_mem)
   }
   kinls_mem = (KINLsMem) kin_mem->kin_lmem;
 
-
   /* recompute if J if it is non-NULL */
   if (kinls_mem->J) {
 
     /* Increment nje counter. */
     kinls_mem->nje++;
 
-    /* Zero out J */
-    retval = SUNMatZero(kinls_mem->J);
-    if (retval != 0) {
-      KINProcessError(kin_mem, KINLS_SUNMAT_FAIL, "KINLS",
-                      "kinLsSetup", MSG_LS_MATZERO_FAILED);
-      kinls_mem->last_flag = KINLS_SUNMAT_FAIL;
-      return(kinls_mem->last_flag);
+    /* Clear the linear system matrix if necessary */
+    if (SUNLinSolGetType(kinls_mem->LS) == SUNLINEARSOLVER_DIRECT) {
+      retval = SUNMatZero(kinls_mem->J);
+      if (retval != 0) {
+        KINProcessError(kin_mem, KINLS_SUNMAT_FAIL, "KINLS",
+                        "kinLsSetup", MSG_LS_MATZERO_FAILED);
+        kinls_mem->last_flag = KINLS_SUNMAT_FAIL;
+        return(kinls_mem->last_flag);
+      }
     }
 
     /* Call Jacobian routine */

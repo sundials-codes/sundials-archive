@@ -27,10 +27,10 @@ SET(ARKODE_extras
   plot_brusselator1D.py
   )
 
-IF(MPI_C_COMPILER)
+IF(MPI_C_FOUND AND MPI_C_COMPILER)
   # use MPI wrapper as the compiler
   SET(CMAKE_C_COMPILER ${MPI_C_COMPILER})
-ELSE()
+ELSEIF(MPI_C_FOUND)
   # add MPI_INCLUDE_PATH to include directories
   INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ENDIF()
@@ -95,20 +95,13 @@ IF(EXAMPLES_INSTALL)
 
   EXAMPLES2STRING(ARKODE_examples EXAMPLES)
 
-  # What templates we use depend on if MPI is enabled
-  IF(MPI_ENABLE AND MPI_C_FOUND)
-    SET(_template_paradigm_string "parallel")
-  ELSE()
-    SET(_template_paradigm_string "serial")
-  ENDIF()
-
   # Regardless of the platform we're on, we will generate and install
   # CMakeLists.txt file for building the examples. This file  can then
   # be used as a template for the user's own programs.
 
   # generate CMakelists.txt in the binary directory
   CONFIGURE_FILE(
-    ${PROJECT_SOURCE_DIR}/examples/templates/cmakelists_${_template_paradigm_string}_C_ex.in
+    ${PROJECT_SOURCE_DIR}/examples/templates/cmakelists_serial_C_ex.in
     ${PROJECT_BINARY_DIR}/examples/arkode/C_manyvector/CMakeLists.txt
     @ONLY
     )
@@ -126,7 +119,7 @@ IF(EXAMPLES_INSTALL)
   IF(UNIX)
     # generate Makefile and place it in the binary dir
     CONFIGURE_FILE(
-      ${PROJECT_SOURCE_DIR}/examples/templates/makefile_${_template_paradigm_string}_C_ex.in
+      ${PROJECT_SOURCE_DIR}/examples/templates/makefile_serial_C_ex.in
       ${PROJECT_BINARY_DIR}/examples/arkode/C_manyvector/Makefile_ex
       @ONLY
       )

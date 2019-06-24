@@ -36,7 +36,7 @@ SET(nvector_examples_dependencies
 # If building F2003 tests
 if (F2003_INTERFACE_ENABLE)
   set(nvector_openmp_fortran_examples
-    "ftest_nvector_openmp\;\;")
+    "test_fnvector_openmp_mod\;\;")
 endif()
 
 # Add source directory to include directories
@@ -78,12 +78,7 @@ FOREACH(example_tuple ${nvector_openmp_examples})
   IF(NOT TARGET ${example})
     # example source files
     ADD_EXECUTABLE(${example} ${example}.c
-      ../test_nvector.c ../../../src/sundials/sundials_nvector.c
-      ../../../src/sundials/sundials_mpi.c)
-
-    # must ensure SUNDIALS_MPI_ENABLED=0 so that the correct block
-    # of sundials_mpi.h is included.
-    TARGET_COMPILE_DEFINITIONS(${example} PRIVATE -DSUNDIALS_MPI_ENABLED=0)
+      ../test_nvector.c ../../../src/sundials/sundials_nvector.c)
 
     # folder to organize targets in an IDE
     SET_TARGET_PROPERTIES(${example} PROPERTIES FOLDER "Examples")
@@ -110,7 +105,7 @@ FOREACH(example_tuple ${nvector_openmp_examples})
     INSTALL(FILES ${example}.c
       ../test_nvector.c
       ../test_nvector.h
-      ../../../src/sundials/sundials_nvector.c
+      ${sundials_SOURCE_DIR}/src/sundials/sundials_nvector.c
       DESTINATION ${EXAMPLES_INSTALL_PATH}/nvector/C_openmp)
   ENDIF()
 
@@ -136,7 +131,11 @@ FOREACH(example_tuple ${nvector_openmp_fortran_examples})
   # example source files once for testing with different inputs
   IF(NOT TARGET ${example})
     # example source files
-    ADD_EXECUTABLE(${example} ${example}.f90)
+    ADD_EXECUTABLE(${example} ${example}.f90
+      ${sundials_SOURCE_DIR}/examples/test_utilities.f90
+      ${sundials_SOURCE_DIR}/examples/nvector/test_nvector.f90
+      $<TARGET_OBJECTS:sundials_generic_${LINK_LIBRARY_TYPE}_obj>
+      $<TARGET_OBJECTS:sundials_fgeneric_${LINK_LIBRARY_TYPE}_obj>)
 
     # folder to organize targets in an IDE
     SET_TARGET_PROPERTIES(${example} PROPERTIES FOLDER "Examples")

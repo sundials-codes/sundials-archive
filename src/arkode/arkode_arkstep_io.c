@@ -342,6 +342,10 @@ int ARKStepSetMassTimes(void *arkode_mem, ARKLsMassTimesSetupFn msetup,
                         ARKLsMassTimesVecFn mtimes, void *mtimes_data) {
   return(arkLSSetMassTimes(arkode_mem, msetup, mtimes, mtimes_data)); }
 
+int ARKStepSetLinSysFn(void *arkode_mem, ARKLsLinSysFn linsys)
+{
+  return(arkLSSetLinSysFn(arkode_mem, linsys));
+}
 
 
 /*===============================================================
@@ -1567,7 +1571,7 @@ int ARKStepSetFixedStepBounds(void *arkode_mem, realtype lb, realtype ub)
   ---------------------------------------------------------------*/
 int ARKStepSetAdaptivityMethod(void *arkode_mem, int imethod,
                                int idefault, int pq,
-                               realtype *adapt_params)
+                               realtype adapt_params[3])
 {
   ARKodeMem ark_mem;
   ARKodeARKStepMem step_mem;

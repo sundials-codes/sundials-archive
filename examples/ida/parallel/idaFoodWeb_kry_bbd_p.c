@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
   
   SetInitialProfiles(cc, cp, id, res, webdata);
   
-  N_VDestroy_Parallel(res);
+  N_VDestroy(res);
   
   /* Set remaining inputs to IDAMalloc. */
   
@@ -369,15 +369,15 @@ int main(int argc, char *argv[])
 
   /* Free memory. */
 
-  N_VDestroy_Parallel(cc);
-  N_VDestroy_Parallel(cp);
-  N_VDestroy_Parallel(id);
+  N_VDestroy(cc);
+  N_VDestroy(cp);
+  N_VDestroy(id);
 
   IDAFree(&ida_mem);
   SUNLinSolFree(LS);
 
   destroyMat(webdata->acoef);
-  N_VDestroy_Parallel(webdata->rates);
+  N_VDestroy(webdata->rates);
   free(webdata);
 
   MPI_Finalize();
@@ -561,13 +561,13 @@ static void PrintOutput(void *ida_mem, N_Vector cc, realtype tt,
 
   thispe = webdata->thispe; 
   npelast = webdata->npes - 1;
-  cdata = N_VGetArrayPointer_Parallel(cc);
+  cdata = N_VGetArrayPointer(cc);
   
   /* Send conc. at top right mesh point from PE npes-1 to PE 0. */
   if (thispe == npelast) {
     ilast = NUM_SPECIES*MXSUB*MYSUB - 2;
     if (npelast != 0)
-      MPI_Send(&cdata[ilast], 2, PVEC_REAL_MPI_TYPE, 0, 0, comm);
+      MPI_Send(&cdata[ilast], 2, MPI_SUNREALTYPE, 0, 0, comm);
     else { clast[0] = cdata[ilast]; clast[1] = cdata[ilast+1]; }
   }
   
@@ -577,7 +577,7 @@ static void PrintOutput(void *ida_mem, N_Vector cc, realtype tt,
   if (thispe == 0) {
     
     if (npelast != 0)
-      MPI_Recv(&clast[0], 2, PVEC_REAL_MPI_TYPE, npelast, 0, comm, &status);
+      MPI_Recv(&clast[0], 2, MPI_SUNREALTYPE, npelast, 0, comm, &status);
     
     retval = IDAGetLastOrder(ida_mem, &kused);
     check_retval(&retval, "IDAGetLastOrder", 1, thispe);
@@ -756,7 +756,7 @@ static int rescomm(sunindextype Nlocal, realtype tt,
   MPI_Request request[4];
   
   webdata = (UserData) user_data;
-  cdata = N_VGetArrayPointer_Parallel(cc);
+  cdata = N_VGetArrayPointer(cc);
   
   /* Get comm, thispe, subgrid indices, data sizes, extended array cext. */
   
@@ -804,25 +804,25 @@ static void BRecvPost(MPI_Comm comm, MPI_Request request[], int my_pe,
 
   /* If jysub > 0, receive data for bottom x-line of cext. */
   if (jysub != 0)
-    MPI_Irecv(&cext[NUM_SPECIES], dsizex, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&cext[NUM_SPECIES], dsizex, MPI_SUNREALTYPE,
               my_pe-NPEX, 0, comm, &request[0]);
   
   /* If jysub < NPEY-1, receive data for top x-line of cext. */
   if (jysub != NPEY-1) {
     offsetce = NUM_SPECIES*(1 + (MYSUB+1)*(MXSUB+2));
-    MPI_Irecv(&cext[offsetce], dsizex, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&cext[offsetce], dsizex, MPI_SUNREALTYPE,
               my_pe+NPEX, 0, comm, &request[1]);
   }
   
   /* If ixsub > 0, receive data for left y-line of cext (via bufleft). */
   if (ixsub != 0) {
-    MPI_Irecv(&bufleft[0], dsizey, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&bufleft[0], dsizey, MPI_SUNREALTYPE,
               my_pe-1, 0, comm, &request[2]);
   }
   
   /* If ixsub < NPEX-1, receive data for right y-line of cext (via bufright). */
   if (ixsub != NPEX-1) {
-    MPI_Irecv(&bufright[0], dsizey, PVEC_REAL_MPI_TYPE,
+    MPI_Irecv(&bufright[0], dsizey, MPI_SUNREALTYPE,
               my_pe+1, 0, comm, &request[3]);
   }
   
@@ -897,13 +897,13 @@ static void BSend(MPI_Comm comm, int my_pe, int ixsub, int jysub,
   /* If jysub > 0, send data from bottom x-line of cc. */
 
   if (jysub != 0)
-    MPI_Send(&cdata[0], dsizex, PVEC_REAL_MPI_TYPE, my_pe-NPEX, 0, comm);
+    MPI_Send(&cdata[0], dsizex, MPI_SUNREALTYPE, my_pe-NPEX, 0, comm);
 
   /* If jysub < NPEY-1, send data from top x-line of cc. */
 
   if (jysub != NPEY-1) {
     offsetc = (MYSUB-1)*dsizex;
-    MPI_Send(&cdata[offsetc], dsizex, PVEC_REAL_MPI_TYPE, my_pe+NPEX, 0, comm);
+    MPI_Send(&cdata[offsetc], dsizex, MPI_SUNREALTYPE, my_pe+NPEX, 0, comm);
   }
 
   /* If ixsub > 0, send data from left y-line of cc (via bufleft). */
@@ -915,7 +915,7 @@ static void BSend(MPI_Comm comm, int my_pe, int ixsub, int jysub,
       for (i = 0; i < NUM_SPECIES; i++)
         bufleft[offsetbuf+i] = cdata[offsetc+i];
     }
-    MPI_Send(&bufleft[0], dsizey, PVEC_REAL_MPI_TYPE, my_pe-1, 0, comm);   
+    MPI_Send(&bufleft[0], dsizey, MPI_SUNREALTYPE, my_pe-1, 0, comm);   
   }
   
   /* If ixsub < NPEX-1, send data from right y-line of cc (via bufright). */
@@ -927,7 +927,7 @@ static void BSend(MPI_Comm comm, int my_pe, int ixsub, int jysub,
       for (i = 0; i < NUM_SPECIES; i++)
         bufright[offsetbuf+i] = cdata[offsetc+i];
     }
-    MPI_Send(&bufright[0], dsizey, PVEC_REAL_MPI_TYPE, my_pe+1, 0, comm);   
+    MPI_Send(&bufright[0], dsizey, MPI_SUNREALTYPE, my_pe+1, 0, comm);   
   }
 }
  
@@ -980,7 +980,7 @@ static int reslocal(sunindextype Nlocal, realtype tt,
   
   /* Get data pointers, subgrid data, array sizes, work array cext. */
   
-  cdata = N_VGetArrayPointer_Parallel(cc);
+  cdata = N_VGetArrayPointer(cc);
   
   /* Copy local segment of cc vector into the working extended array cext. */
   
