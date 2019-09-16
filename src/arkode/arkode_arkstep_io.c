@@ -92,14 +92,32 @@ int ARKStepSetErrFile(void *arkode_mem, FILE *errfp)
   ---------------------------------------------------------------*/
 int ARKStepSetUserData(void *arkode_mem, void *user_data)
 {
-  ARKodeMem ark_mem;
-  if (arkode_mem==NULL) {
-    arkProcessError(NULL, ARK_MEM_NULL, "ARKode::ARKStep",
-                    "ARKStepSetUserData", MSG_ARK_NO_MEM);
-    return(ARK_MEM_NULL);
+  ARKodeMem        ark_mem;
+  ARKodeARKStepMem step_mem;
+  int              retval;
+
+  /* access ARKodeARKStepMem structure */
+  retval = arkStep_AccessStepMem(arkode_mem, "ARKStepSetFixedStep",
+                                 &ark_mem, &step_mem);
+  if (retval != ARK_SUCCESS) return(retval);
+
+  /* set user_data in ARKode mem */
+  retval = arkSetUserData(ark_mem, user_data);
+  if (retval != ARK_SUCCESS) return(retval);
+
+  /* set user data in ARKodeLS mem */
+  if (step_mem->lmem != NULL) {
+    retval = arkLSSetUserData(arkode_mem, user_data);
+    if (retval != ARKLS_SUCCESS) return(retval);
   }
-  ark_mem = (ARKodeMem) arkode_mem;
-  return(arkSetUserData(ark_mem, user_data));
+
+  /* set user data in ARKodeLSMass mem */
+  if (step_mem->mass_mem != NULL) {
+    retval = arkLSSetMassUserData(arkode_mem, user_data);
+    if (retval != ARKLS_SUCCESS) return(retval);
+  }
+
+  return(ARK_SUCCESS);
 }
 
 /*---------------------------------------------------------------
@@ -434,6 +452,37 @@ int ARKStepGetCurrentTime(void *arkode_mem, realtype *tcur)
 }
 
 /*---------------------------------------------------------------
+  ARKStepGetCurrentState: Returns the current value of the
+  dependent variable
+  ---------------------------------------------------------------*/
+int ARKStepGetCurrentState(void *arkode_mem, N_Vector *ycur)
+{
+  ARKodeMem ark_mem;
+  if (arkode_mem == NULL) {
+    arkProcessError(NULL, ARK_MEM_NULL, "ARKode::ARKStep",
+                    "ARKStepGetCurrentY", MSG_ARK_NO_MEM);
+    return(ARK_MEM_NULL);
+  }
+  ark_mem = (ARKodeMem) arkode_mem;
+  *ycur = ark_mem->ycur;
+  return(ARK_SUCCESS);
+}
+
+/*---------------------------------------------------------------
+  ARKStepGetCurrentGamma: Returns the current value of gamma
+  ---------------------------------------------------------------*/
+int ARKStepGetCurrentGamma(void *arkode_mem, realtype *gamma)
+{
+  int retval;
+  ARKodeMem ark_mem;
+  ARKodeARKStepMem step_mem;
+  retval = arkStep_AccessStepMem(arkode_mem, NULL, &ark_mem, &step_mem);
+  if (retval != ARK_SUCCESS) return(retval);
+  *gamma = step_mem->gamma;
+  return(retval);
+}
+
+/*---------------------------------------------------------------
   ARKStepGetTolScaleFactor: Returns a suggested factor for scaling
   tolerances
   ---------------------------------------------------------------*/
@@ -573,7 +622,7 @@ int ARKStepGetNumJTSetupEvals(void *arkode_mem, long int *njtsetups) {
 int ARKStepGetNumJtimesEvals(void *arkode_mem, long int *njvevals) {
   return(arkLSGetNumJtimesEvals(arkode_mem, njvevals)); }
 int ARKStepGetNumLinRhsEvals(void *arkode_mem, long int *nfevalsLS) {
-  return(arkLSGetNumRhsEvals(arkode_mem, nfevalsLS)); } 
+  return(arkLSGetNumRhsEvals(arkode_mem, nfevalsLS)); }
 int ARKStepGetLastLinFlag(void *arkode_mem, long int *flag) {
   return(arkLSGetLastFlag(arkode_mem, flag)); }
 
@@ -616,7 +665,7 @@ char *ARKStepGetLinReturnFlagName(long int flag) {
   Does not change problem-defining function pointers or
   user_data pointer.  Also leaves alone any data
   structures/options related to the ARKode infrastructure itself
-  (e.g. root-finding).
+  (e.g., root-finding and post-process step).
   ---------------------------------------------------------------*/
 int ARKStepSetDefaults(void* arkode_mem)
 {
@@ -1313,7 +1362,9 @@ int ARKStepSetTableNum(void *arkode_mem, int itable, int etable)
     /* ensure that tables match */
     if ( !((etable == ARK324L2SA_ERK_4_2_3) && (itable == ARK324L2SA_DIRK_4_2_3)) &&
          !((etable == ARK436L2SA_ERK_6_3_4) && (itable == ARK436L2SA_DIRK_6_3_4)) &&
-         !((etable == ARK548L2SA_ERK_8_4_5) && (itable == ARK548L2SA_DIRK_8_4_5)) ) {
+         !((etable == ARK437L2SA_ERK_7_3_4) && (itable == ARK437L2SA_DIRK_7_3_4)) &&
+         !((etable == ARK548L2SA_ERK_8_4_5) && (itable == ARK548L2SA_DIRK_8_4_5)) &&
+         !((etable == ARK548L2SAb_ERK_8_4_5) && (itable == ARK548L2SAb_DIRK_8_4_5)) ) {
       arkProcessError(ark_mem, ARK_ILL_INPUT, "ARKode::ARKStep",
                       "ARKStepSetTableNum",
                       "Incompatible Butcher tables for ARK method");

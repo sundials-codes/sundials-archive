@@ -1,8 +1,4 @@
-/*
- * -----------------------------------------------------------------
- * $Revision$
- * $Date$
- * ----------------------------------------------------------------- 
+/* ----------------------------------------------------------------- 
  * Programmer(s): Radu Serban @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
@@ -16,8 +12,7 @@
  * SUNDIALS Copyright End
  * -----------------------------------------------------------------
  * Implementation header file for the main CVODES integrator.
- * -----------------------------------------------------------------
- */
+ * -----------------------------------------------------------------*/
 
 #ifndef _CVODES_IMPL_H
 #define _CVODES_IMPL_H
@@ -290,8 +285,10 @@ typedef struct CVodeMemRec {
   realtype cv_crateS;          /* est. corrector conv. rate in NlsStgr        */
   realtype cv_delp;            /* norm of previous nonlinear solver update    */
   realtype cv_acnrm;           /* | acor |                                    */
+  booleantype cv_acnrmcur;     /* is | acor | current?                        */
   realtype cv_acnrmQ;          /* | acorQ |                                   */
   realtype cv_acnrmS;          /* | acorS |                                   */
+  booleantype cv_acnrmScur;    /* is | acorS | current?                       */
   realtype cv_acnrmQS;         /* | acorQS |                                  */
   realtype cv_nlscoef;         /* coeficient in nonlinear convergence test    */
   int  *cv_ncfS1;              /* Array of Ns local counters for conv.  
@@ -391,16 +388,16 @@ typedef struct CVodeMemRec {
   /* The following vectors are NVector wrappers for use with the simultaneous
      and staggered corrector methods:
 
-       Simultaneous: ycor0Sim = [ida_delta, ida_deltaS]
-                     ycorSim  = [ida_ee,    ida_eeS]
-                     ewtSim   = [ida_ewt,   ida_ewtS]
+       Simultaneous: zn0Sim  = [cv_zn[0], cv_znS[0]]
+                     ycorSim = [cv_acor,  cv_acorS]
+                     ewtSim  = [cv_ewt,   cv_ewtS]
 
-       Staggered: ycor0Stg = ida_deltaS
-                  ycorStg  = ida_eeS
-                  ewtStg   = ida_ewtS
+       Staggered: zn0Stg  = cv_znS[0]
+                  ycorStg = cv_acorS
+                  ewtStg  = cv_ewtS
   */
-  N_Vector ycor0Sim, ycorSim, ewtSim;
-  N_Vector ycor0Stg, ycorStg, ewtStg;
+  N_Vector zn0Sim, ycorSim, ewtSim;
+  N_Vector zn0Stg, ycorStg, ewtStg;
 
   /* flags indicating if vector wrappers for the simultaneous and staggered
      correctors have been allocated */

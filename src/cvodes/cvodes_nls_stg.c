@@ -138,8 +138,8 @@ int CVodeSetNonlinearSolverSensStg(void *cvode_mem, SUNNonlinearSolver NLS)
   /* create vector wrappers if necessary */
   if (cv_mem->stgMallocDone == SUNFALSE) {
 
-    cv_mem->ycor0Stg = N_VNewEmpty_SensWrapper(cv_mem->cv_Ns);
-    if (cv_mem->ycor0Stg == NULL) {
+    cv_mem->zn0Stg = N_VNewEmpty_SensWrapper(cv_mem->cv_Ns);
+    if (cv_mem->zn0Stg == NULL) {
       cvProcessError(cv_mem, CV_MEM_FAIL, "CVODES",
                      "CVodeSetNonlinearSolverSensStg", MSGCV_MEM_FAIL);
       return(CV_MEM_FAIL);
@@ -147,7 +147,7 @@ int CVodeSetNonlinearSolverSensStg(void *cvode_mem, SUNNonlinearSolver NLS)
 
     cv_mem->ycorStg = N_VNewEmpty_SensWrapper(cv_mem->cv_Ns);
     if (cv_mem->ycorStg == NULL) {
-      N_VDestroy(cv_mem->ycor0Stg);
+      N_VDestroy(cv_mem->zn0Stg);
       cvProcessError(cv_mem, CV_MEM_FAIL, "CVODES",
                      "CVodeSetNonlinearSolverSensStg", MSGCV_MEM_FAIL);
       return(CV_MEM_FAIL);
@@ -155,7 +155,7 @@ int CVodeSetNonlinearSolverSensStg(void *cvode_mem, SUNNonlinearSolver NLS)
 
     cv_mem->ewtStg = N_VNewEmpty_SensWrapper(cv_mem->cv_Ns);
     if (cv_mem->ewtStg == NULL) {
-      N_VDestroy(cv_mem->ycor0Stg);
+      N_VDestroy(cv_mem->zn0Stg);
       N_VDestroy(cv_mem->ycorStg);
       cvProcessError(cv_mem, CV_MEM_FAIL, "CVODES",
                      "CVodeSetNonlinearSolverSensStg", MSGCV_MEM_FAIL);
@@ -167,10 +167,13 @@ int CVodeSetNonlinearSolverSensStg(void *cvode_mem, SUNNonlinearSolver NLS)
 
   /* attach vectors to vector wrappers */
   for (is=0; is < cv_mem->cv_Ns; is++) {
-    NV_VEC_SW(cv_mem->ycor0Stg, is) = cv_mem->cv_tempvS[is];
-    NV_VEC_SW(cv_mem->ycorStg,  is) = cv_mem->cv_acorS[is];
-    NV_VEC_SW(cv_mem->ewtStg,   is) = cv_mem->cv_ewtS[is];
+    NV_VEC_SW(cv_mem->zn0Stg,  is) = cv_mem->cv_znS[0][is];
+    NV_VEC_SW(cv_mem->ycorStg, is) = cv_mem->cv_acorS[is];
+    NV_VEC_SW(cv_mem->ewtStg,  is) = cv_mem->cv_ewtS[is];
   }
+
+  /* Reset the acnrmScur flag to SUNFALSE */
+  cv_mem->cv_acnrmScur = SUNFALSE;
 
   return(CV_SUCCESS);
 }
@@ -341,8 +344,10 @@ static int cvNlsConvTestSensStg(SUNNonlinearSolver NLS,
 
   /* check if nonlinear system was solved successfully */
   if (dcon <= ONE) {
-    if (cv_mem->cv_errconS)
+    if (cv_mem->cv_errconS) {
       cv_mem->cv_acnrmS = (m==0) ? Del : cvSensNorm(cv_mem, ycorS, ewtS);
+      cv_mem->cv_acnrmScur = SUNTRUE;
+    }
     return(CV_SUCCESS);
   }
 

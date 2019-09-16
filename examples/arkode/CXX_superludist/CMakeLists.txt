@@ -105,7 +105,7 @@ IF(EXAMPLES_INSTALL)
   SET(SOLVER "ARKODE")
   STRING(CONCAT SUNDIALS_LIBS "-lsundials_arkode "
     "-lsundials_sunmatrixslunrloc "
-    "-lsundials_sunlinsolsuperludist"
+    "-lsundials_sunlinsolsuperludist "
     "-lsundials_nvecopenmp")
 
   EXAMPLES2STRING(ARKODE_examples EXAMPLES)
@@ -145,5 +145,8 @@ IF(EXAMPLES_INSTALL)
       RENAME Makefile
       )
   ENDIF(UNIX)
+
+  # add test_install target
+  SUNDIALS_ADD_TEST_INSTALL(arkode CXX_superludist)
 
 ENDIF(EXAMPLES_INSTALL)

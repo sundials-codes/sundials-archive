@@ -19,24 +19,9 @@
 # Initial commands
 # ---------------------------------------------------------------
 
-# Require a fairly recent cmake version
-cmake_minimum_required(VERSION 3.1.3)
-
-# Libraries linked via full path no longer produce linker search paths
-# Allows examples to build
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
-
-# MACOSX_RPATH is enabled by default
-# Fixes dynamic loading on OSX
-if(POLICY CMP0042)
-  cmake_policy(SET CMP0042 NEW) # Added in CMake 3.0
-else()
-  if(APPLE)
-    set(CMAKE_MACOSX_RPATH 1)
-  endif()
-endif()
+# Require CMake 3.5 by default, but certain options will force us
+# to require CMake 3.10
+cmake_minimum_required(VERSION 3.5)
 
 # Project SUNDIALS (initially only C supported)
 # sets PROJECT_SOURCE_DIR and PROJECT_BINARY_DIR variables
@@ -45,7 +30,7 @@ PROJECT(sundials C)
 # Set some variables with info on the SUNDIALS project
 SET(PACKAGE_BUGREPORT "woodward6@llnl.gov")
 SET(PACKAGE_NAME "SUNDIALS")
-SET(PACKAGE_STRING "SUNDIALS 5.0.0-dev.1")
+SET(PACKAGE_STRING "SUNDIALS 5.0.0-dev.2")
 SET(PACKAGE_TARNAME "sundials")
 
 # set SUNDIALS version numbers
@@ -53,7 +38,7 @@ SET(PACKAGE_TARNAME "sundials")
 SET(PACKAGE_VERSION_MAJOR "5")
 SET(PACKAGE_VERSION_MINOR "0")
 SET(PACKAGE_VERSION_PATCH "0")
-SET(PACKAGE_VERSION_LABEL "dev.1")
+SET(PACKAGE_VERSION_LABEL "dev.2")
 
 IF(PACKAGE_VERSION_LABEL)
   SET(PACKAGE_VERSION "${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}.${PACKAGE_VERSION_PATCH}-${PACKAGE_VERSION_LABEL}")
@@ -78,37 +63,37 @@ MARK_AS_ADVANCED(CLEAR
 
 # Specify the VERSION and SOVERSION for shared libraries
 
-SET(arkodelib_VERSION "4.0.0-dev.1")
+SET(arkodelib_VERSION "4.0.0-dev.2")
 SET(arkodelib_SOVERSION "4")
 
-SET(cvodelib_VERSION "5.0.0-dev.1")
+SET(cvodelib_VERSION "5.0.0-dev.2")
 SET(cvodelib_SOVERSION "5")
 
-SET(cvodeslib_VERSION "5.0.0-dev.1")
+SET(cvodeslib_VERSION "5.0.0-dev.2")
 SET(cvodeslib_SOVERSION "5")
 
-SET(idalib_VERSION "5.0.0-dev.1")
+SET(idalib_VERSION "5.0.0-dev.2")
 SET(idalib_SOVERSION "5")
 
-SET(idaslib_VERSION "4.0.0-dev.1")
+SET(idaslib_VERSION "4.0.0-dev.2")
 SET(idaslib_SOVERSION "4")
 
-SET(kinsollib_VERSION "5.0.0-dev.1")
+SET(kinsollib_VERSION "5.0.0-dev.2")
 SET(kinsollib_SOVERSION "5")
 
 SET(cpodeslib_VERSION "0.0.0")
 SET(cpodeslib_SOVERSION "0")
 
-SET(nveclib_VERSION "5.0.0-dev.1")
+SET(nveclib_VERSION "5.0.0-dev.2")
 SET(nveclib_SOVERSION "5")
 
-SET(sunmatrixlib_VERSION "3.0.0-dev.1")
+SET(sunmatrixlib_VERSION "3.0.0-dev.2")
 SET(sunmatrixlib_SOVERSION "3")
 
-SET(sunlinsollib_VERSION "3.0.0-dev.1")
+SET(sunlinsollib_VERSION "3.0.0-dev.2")
 SET(sunlinsollib_SOVERSION "3")
 
-SET(sunnonlinsollib_VERSION "2.0.0-dev.1")
+SET(sunnonlinsollib_VERSION "2.0.0-dev.2")
 SET(sunnonlinsollib_SOVERSION "2")
 
 # Specify the location of additional CMAKE modules
@@ -173,7 +158,6 @@ ENDIF()
 # ---------------------------------------------------------------
 # MACRO definitions
 # ---------------------------------------------------------------
-INCLUDE(CMakeParseArguments) # can be removed when CMake 3.5+ is required
 INCLUDE(SundialsCMakeMacros)
 INCLUDE(SundialsAddF2003InterfaceLibrary)
 INCLUDE(SundialsAddTest)
@@ -293,7 +277,7 @@ IF(F2003_INTERFACE_ENABLE)
 
   # Allow a user to set where the Fortran modules will be installed
   SET(DOCSTR "Directory where Fortran module files are installed")
-  SHOW_VARIABLE(Fortran_INSTALL_MODDIR DIRECTORY "${DOCSTR}" "fortran")
+  SHOW_VARIABLE(Fortran_INSTALL_MODDIR STRING "${DOCSTR}" "fortran")
 ENDIF()
 
 # ---------------------------------------------------------------
@@ -349,7 +333,7 @@ ENDIF(UNIX)
 INCLUDE(SundialsPOSIXTimers)
 
 # ===============================================================
-# Options for Parallelism
+# Options for languages and parallelism
 # ===============================================================
 
 # ---------------------------------------------------------------
@@ -371,6 +355,13 @@ OPTION(OPENMP_DEVICE_ENABLE "Enable OpenMP device offloading support" OFF)
 OPTION(SKIP_OPENMP_DEVICE_CHECK "Skip the OpenMP device offloading support check" OFF)
 MARK_AS_ADVANCED(FORCE SKIP_OPENMP_DEVICE_CHECK)
 
+if(OPENMP_DEVICE_ENABLE)
+  if(CMAKE_VERSION VERSION_LESS 3.10)
+    print_error("CMake >= 3.10 is required for OPENMP_DEVICE_ENABLE.")
+  endif()
+  cmake_minimum_required(VERSION 3.10)
+endif()
+
 # ---------------------------------------------------------------
 # Enable Pthread support?
 # ---------------------------------------------------------------
@@ -381,23 +372,19 @@ OPTION(PTHREAD_ENABLE "Enable Pthreads support" OFF)
 # -------------------------------------------------------------
 OPTION(CUDA_ENABLE "Enable CUDA support" OFF)
 
-# -------------------------------------------------------------
-# Enable RAJA support?
-# -------------------------------------------------------------
-OPTION(RAJA_ENABLE "Enable RAJA support" OFF)
-
+if(CUDA_ENABLE)
+  if(CMAKE_VERSION VERSION_LESS 3.10)
+    print_error("CMake >= 3.10 is required for CUDA_ENABLE.")
+  endif()
+  cmake_minimum_required(VERSION 3.10)
+endif()
 
 # ===============================================================
 # Options for external packages
 # ===============================================================
 
 # ---------------------------------------------------------------
-# Enable BLAS support?
-# ---------------------------------------------------------------
-OPTION(BLAS_ENABLE "Enable BLAS support" OFF)
-
-# ---------------------------------------------------------------
-# Enable LAPACK/BLAS support?
+# Enable LAPACK support?
 # ---------------------------------------------------------------
 OPTION(LAPACK_ENABLE "Enable Lapack support" OFF)
 
@@ -418,14 +405,14 @@ ENDIF()
 # ---------------------------------------------------------------
 # Enable SuperLU_DIST support?
 # ---------------------------------------------------------------
-sundials_option(SUPERLUDIST_ENABLE BOOL "Enable SuperLUDIST support" OFF
+sundials_option(SUPERLUDIST_ENABLE BOOL "Enable SuperLU_DIST support" OFF
                 XSDK_NAME TPL_ENABLE_SUPERLUDIST)
 
-sundials_option(SUPERLUDIST_INCLUDE_DIR PATH "SuperLUDIST include directory" "${SUPERLUDIST_INCLUDE_DIR}"
+sundials_option(SUPERLUDIST_INCLUDE_DIR PATH "SuperLU_DIST include directory" "${SUPERLUDIST_INCLUDE_DIR}"
                 DEPENDS_ON SUPERLUDIST_ENABLE
                 XSDK_NAME TPL_SUPERLUDIST_INCLUDE_DIRS)
 
-sundials_option(SUPERLUDIST_LIBRARY_DIR PATH "SuperLUDIST library directory" "${SUPERLUDIST_LIBRARY_DIR}"
+sundials_option(SUPERLUDIST_LIBRARY_DIR PATH "SuperLU_DIST library directory" "${SUPERLUDIST_LIBRARY_DIR}"
                 DEPENDS_ON SUPERLUDIST_ENABLE
                 XSDK_HIDE)
 
@@ -433,21 +420,31 @@ sundials_option(SUPERLUDIST_LIBRARIES STRING "Semi-colon separated list of addit
                 DEPENDS_ON SUPERLUDIST_ENABLE
                 XSDK_NAME TPL_SUPERLUDIST_LIBRARIES)
 
-sundials_option(SUPERLUDIST_OpenMP BOOL "Enable SUNDIALS support for SuperLUDIST OpenMP on-node parallelism" OFF
+sundials_option(SUPERLUDIST_OpenMP BOOL "Enable SUNDIALS support for SuperLU_DIST OpenMP on-node parallelism" OFF
                 DEPENDS_ON SUPERLUDIST_ENABLE
                 XSDK_NAME TPL_SUPERLUDIST_OpenMP)
 
 # ---------------------------------------------------------------
 # Enable SuperLU_MT support?
 # ---------------------------------------------------------------
-OPTION(SUPERLUMT_ENABLE "Enable SUPERLUMT support" OFF)
+sundials_option(SUPERLUMT_ENABLE BOOL "Enable SuperLU_MT support" OFF
+                XSDK_NAME TPL_ENABLE_SUPERLUMT)
 
-# SuperLU_MT does not support extended precision
-IF(SUPERLUMT_ENABLE AND SUNDIALS_PRECISION MATCHES "EXTENDED")
-  PRINT_WARNING("SuperLU_MT is not compatible with ${SUNDIALS_PRECISION} precision"
-                "Disabling SuperLU_MT")
-  FORCE_VARIABLE(SUPERLUMT_ENABLE BOOL "SuperLU_MT is disabled" OFF)
-ENDIF()
+sundials_option(SUPERLUMT_INCLUDE_DIR PATH "SuperLU_MT include directory" "${SUPERLUMT_INCLUDE_DIR}"
+                DEPENDS_ON SUPERLUMT_ENABLE
+                XSDK_NAME TPL_SUPERLUMT_INCLUDE_DIRS)
+
+sundials_option(SUPERLUMT_LIBRARY_DIR PATH "SuperLU_MT library directory" "${SUPERLUMT_LIBRARY_DIR}"
+                DEPENDS_ON SUPERLUMT_ENABLE
+                XSDK_HIDE)
+
+sundials_option(SUPERLUMT_LIBRARIES STRING "Semi-colon separated list of additional libraries needed for SuperLU_MT." "${SUPERLUMT_LIBRARIES}"
+                DEPENDS_ON SUPERLUMT_ENABLE
+                XSDK_NAME TPL_SUPERLUMT_LIBRARIES)
+
+sundials_option(SUPERLUMT_THREAD_TYPE BOOL "SuperLU_MT threading type: OPENMP or PTHREAD" "PTHREAD"
+                DEPENDS_ON SUPERLUMT_ENABLE
+                XSDK_NAME TPL_SUPERLUMT_THREAD_TYPE)
 
 # ---------------------------------------------------------------
 # Enable KLU support?
@@ -491,6 +488,15 @@ ENDIF()
 # ---------------------------------------------------------------
 OPTION(Trilinos_ENABLE "Enable Trilinos support" OFF)
 
+# -------------------------------------------------------------
+# Enable RAJA support?
+# -------------------------------------------------------------
+sundials_option(RAJA_ENABLE BOOL "Enable RAJA support" OFF
+                XSDK_NAME TPL_ENABLE_RAJA)
+
+if(RAJA_ENABLE AND (NOT CUDA_ENABLE))
+  PRINT_ERROR("CUDA is required for RAJA support. Please enable CUDA and RAJA.")
+endif()
 
 # ===============================================================
 # Options for examples
@@ -714,13 +720,13 @@ ENDIF(APPLE)
 
 # ---------------------------------------------------------------
 # A Fortran compiler is needed to:
-# (a) Determine the name-mangling scheme if FCMIX, BLAS, or
+# (a) Determine compiler the name-mangling scheme if FCMIX or
 #     LAPACK are enabled
 # (b) Compile example programs if F77 or F90 examples are enabled
 # ---------------------------------------------------------------
 
 # Do we need a Fortran name-mangling scheme?
-if(F77_INTERFACE_ENABLE OR BLAS_ENABLE OR LAPACK_ENABLE)
+if(F77_INTERFACE_ENABLE OR LAPACK_ENABLE)
   set(NEED_FORTRAN_NAME_MANGLING TRUE)
 endif()
 
@@ -810,26 +816,22 @@ endif()
 # ---------------------------------------------------------------
 
 if(CUDA_ENABLE)
-  find_package(CUDA)
-  if (CUDA_FOUND)
-    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -lineinfo")
-  else()
-    message(STATUS "Disabling CUDA support, could not find CUDA.")
-    set(CUDA_ENABLE OFF)
-  endif()
+   # If a user did not provide the host compiler, then we
+   # assume that they want to use the CXX compiler that was set.
+   if(NOT (DEFINED CMAKE_CUDA_HOST_COMPILER))
+     set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "NVCC host compiler")
+     mark_as_advanced(CMAKE_CUDA_HOST_COMPILER)
+   endif()
+   enable_language(CUDA)
+   message(STATUS "The CUDA host compiler is: ${CMAKE_CUDA_HOST_COMPILER}")
+  # Need this as long as CUDA libraries like cuSOLVER are not
+  # available through some other way.
+  find_package(CUDA REQUIRED)
 endif(CUDA_ENABLE)
 
 # ---------------------------------------------------------------
 # Now that all languages are setup, we can configure them more.
 # ---------------------------------------------------------------
-
-# C++11 is needed if:
-#   (a) CUDA is enabled
-# C++11 should not be enabled if
-#   (a) RAJA is enabled (they provide a std flag)
-if (CXX_FOUND AND CUDA_ENABLE AND CUDA_FOUND AND (NOT RAJA_ENABLE))
-  USE_CXX_STD(11)
-endif()
 
 # ---------------------------------------------------------------
 # Decide how to compile MPI codes. We must check for MPI if
@@ -863,95 +865,29 @@ endif()
 # Find OpenMP
 # -------------------------------------------------------------
 
-if(OPENMP_ENABLE OR OPENMP_DEVICE_ENABLE OR SUPERLUDIST_OpenMP)
-
+if(OPENMP_ENABLE OR OPENMP_DEVICE_ENABLE OR
+    (SUPERLUDIST_ENABLE AND SUPERLUDIST_OpenMP))
   include(SundialsOpenMP)
-
-  # turn off OPENMP_ENABLE and OPENMP_DEVICE_ENABLE if OpenMP is not found
-  if(NOT OPENMP_FOUND)
-    print_warning("Could not determine OpenMP compiler flags" "Disabling OpenMP support")
-    force_variable(OPENMP_ENABLE BOOL "Enable OpenMP support" OFF)
-    force_variable(OPENMP_DEVICE_ENABLE BOOL "Enable OpenMP device offloading support" OFF)
-  endif()
-
-  # turn off OPENMP_DEVICE_ENABLE if offloading is not supported
-  if(OPENMP_DEVICE_ENABLE AND (NOT OPENMP_SUPPORTS_DEVICE_OFFLOADING))
-    print_warning("OpenMP found does not support device offloading"
-                  "Disabling OpenMP device offloading support")
-    force_variable(OPENMP_DEVICE_ENABLE BOOL "Enable OpenMP device offloading support" OFF)
-  endif()
-
 endif()
 
 # -------------------------------------------------------------
 # Find PThreads
 # -------------------------------------------------------------
 
-IF(PTHREAD_ENABLE)
-  FIND_PACKAGE(Threads)
-  IF(CMAKE_USE_PTHREADS_INIT)
+if(PTHREAD_ENABLE)
+  find_package(Threads REQUIRED)
+  if(CMAKE_USE_PTHREADS_INIT)
+    set(PTHREADS_FOUND TRUE)
     message(STATUS "Using Pthreads")
-    SET(PTHREADS_FOUND TRUE)
-    # SGS
-  ELSE()
-    message(STATUS "Disabling Pthreads support, could not determine compiler flags")
-  endif()
-ENDIF(PTHREAD_ENABLE)
-
-# -------------------------------------------------------------
-# Find RAJA
-# -------------------------------------------------------------
-
-# disable RAJA if CUDA is not enabled/working
-if(RAJA_ENABLE AND (NOT CUDA_FOUND))
-  PRINT_WARNING("CUDA is required for RAJA support" "Please enable CUDA and RAJA")
-  FORCE_VARIABLE(RAJA_ENABLE BOOL "RAJA disabled" OFF)
-endif()
-
-if(RAJA_ENABLE)
-  # Look for CMake configuration file in RAJA installation
-  find_package(RAJA CONFIG PATHS ${RAJA_DIR} ${RAJA_DIR}/share/raja/cmake)
-  if (RAJA_FOUND)
-    include_directories(${RAJA_INCLUDE_DIR})
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${RAJA_NVCC_FLAGS})
   else()
-    PRINT_WARNING("RAJA configuration not found"
-                  "Please set RAJA_DIR to provide path to RAJA CMake configuration file.")
+    set(PTHREADS_FOUND FALSE)
+    print_error("Could not determine Pthreads compiler flags")
   endif()
-endif(RAJA_ENABLE)
+endif()
 
 # ===============================================================
 # Find (and test) external packages
 # ===============================================================
-
-# ---------------------------------------------------------------
-# Find (and test) the BLAS libraries
-# ---------------------------------------------------------------
-
-# If BLAS is needed, first try to find the appropriate
-# libraries and linker flags needed to link against them.
-
-IF(BLAS_ENABLE)
-
-  # find BLAS
-  INCLUDE(SundialsBlas)
-
-  # show after include so FindBlas can locate BLAS_LIBRARIES if necessary
-  SHOW_VARIABLE(BLAS_LIBRARIES STRING "Blas libraries" "${BLAS_LIBRARIES}")
-
-  IF(BLAS_LIBRARIES AND NOT BLAS_FOUND)
-    PRINT_WARNING("BLAS not functional"
-                  "BLAS support will not be provided")
-  ELSE()
-    #set sundials_config.h symbol via sundials_config.in
-    SET(SUNDIALS_BLAS TRUE)
-  ENDIF()
-
-ELSE()
-
-  HIDE_VARIABLE(BLAS_LIBRARIES)
-
-ENDIF()
 
 # ---------------------------------------------------------------
 # Find (and test) the Lapack libraries
@@ -997,40 +933,12 @@ endif()
 # Find (and test) the SUPERLUMT libraries
 # ---------------------------------------------------------------
 
-# >>>>>>> NOTE: Need to add check for SuperLU_MT integer type
-
-# If SUPERLUMT is needed, first try to find the appropriate
-# libraries to link against them.
-
-IF(SUPERLUMT_ENABLE)
-
-  # Show SuperLU_MT options and set default thread type (Pthreads)
-  SHOW_VARIABLE(SUPERLUMT_THREAD_TYPE STRING "SUPERLUMT threading type: OpenMP or Pthread" "Pthread")
-  SHOW_VARIABLE(SUPERLUMT_INCLUDE_DIR PATH "SUPERLUMT include directory" "${SUPERLUMT_INCLUDE_DIR}")
-  SHOW_VARIABLE(SUPERLUMT_LIBRARY_DIR PATH "SUPERLUMT library directory" "${SUPERLUMT_LIBRARY_DIR}")
-
-  INCLUDE(SundialsSuperLUMT)
-
-  IF(SUPERLUMT_FOUND)
-    # sundials_config.h symbols
-    SET(SUNDIALS_SUPERLUMT TRUE)
-    SET(SUNDIALS_SUPERLUMT_THREAD_TYPE ${SUPERLUMT_THREAD_TYPE})
-    INCLUDE_DIRECTORIES(${SUPERLUMT_INCLUDE_DIR})
-  ENDIF()
-
-  IF(SUPERLUMT_LIBRARIES AND NOT SUPERLUMT_FOUND)
-    PRINT_WARNING("SUPERLUMT not functional - support will not be provided"
-                  "Double check spelling specified libraries (search is case sensitive)")
-  ENDIF(SUPERLUMT_LIBRARIES AND NOT SUPERLUMT_FOUND)
-
-ELSE()
-
-  HIDE_VARIABLE(SUPERLUMT_THREAD_TYPE)
-  HIDE_VARIABLE(SUPERLUMT_LIBRARY_DIR)
-  HIDE_VARIABLE(SUPERLUMT_INCLUDE_DIR)
-  SET (SUPERLUMT_DISABLED TRUE CACHE INTERNAL "GUI - return when first set")
-
-ENDIF()
+if(SUPERLUMT_ENABLE)
+  include(SundialsSuperLUMT)
+else()
+  set(SUPERLUMT_DISABLED TRUE CACHE INTERNAL "GUI - return when first set")
+  set(SUNDIALS_SUPERLUMT FALSE)
+endif()
 
 # ---------------------------------------------------------------
 # Find (and test) the KLU libraries
@@ -1132,6 +1040,18 @@ ELSE()
   SET (PETSC_DISABLED TRUE CACHE INTERNAL "GUI - return when first set")
 
 ENDIF()
+
+# -------------------------------------------------------------
+# Find RAJA
+# -------------------------------------------------------------
+
+if(RAJA_ENABLE)
+  # Look for CMake configuration file in RAJA installation
+  find_package(RAJA CONFIG
+    PATHS ${RAJA_DIR} ${RAJA_DIR}/share/raja/cmake
+    REQUIRED)
+endif(RAJA_ENABLE)
+
 
 # -------------------------------------------------------------
 # Find Trilinos

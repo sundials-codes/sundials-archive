@@ -91,6 +91,8 @@ extern "C" {
 
 #define ARK_INNERSTEP_ATTACH_ERR -34
 #define ARK_INNERSTEP_FAIL       -35
+#define ARK_OUTERTOINNER_FAIL    -36
+#define ARK_INNERTOOUTER_FAIL    -37
 
 #define ARK_UNRECOGNIZED_ERROR   -99
 
@@ -126,7 +128,6 @@ typedef int (*ARKVecResizeFn)(N_Vector y, N_Vector ytemplate,
 
 typedef int (*ARKPostProcessStepFn)(realtype t, N_Vector y,
                                     void *user_data);
-
 
 #ifdef __cplusplus
 }
