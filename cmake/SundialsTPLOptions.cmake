@@ -264,6 +264,9 @@ sundials_option(XBRAID_WORKS BOOL "Set to ON to force CMake to accept a given XB
 
 sundials_option(ENABLE_ONEMKL BOOL "Enable oneMKL support" OFF)
 
+sundials_option(ONEMKL_DIR PATH "Path to root of oneMKL installation" "${ONEMKL_DIR}"
+                SHOW_IF ENABLE_ONEMKL)
+
 sundials_option(ONEMKL_WORKS BOOL "Set to ON to force CMake to accept a given oneMKL configuration" OFF
                 SHOW_IF ENABLE_ONEMKL
                 ADVANCED)
@@ -273,7 +276,6 @@ sundials_option(ONEMKL_WORKS BOOL "Set to ON to force CMake to accept a given on
 # ---------------------------------------------------------------
 
 sundials_option(ENABLE_CALIPER BOOL "Enable CALIPER support" OFF
-                SHOW_IF SUNDIALS_BUILD_WITH_PROFILING
                 DEPENDS_ON SUNDIALS_BUILD_WITH_PROFILING)
 
 sundials_option(CALIPER_DIR PATH "Path to the root of an CALIPER installation" "${CALIPER_DIR}"
