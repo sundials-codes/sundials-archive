@@ -6,7 +6,7 @@
  *                   @ SMU.
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -23,6 +23,8 @@
 #if !defined(_POSIX_C_SOURCE) || (_POSIX_C_SOURCE < 199309L)
 #define _POSIX_C_SOURCE 199309L
 #endif
+
+#include <sundials/sundials_config.h>
 
 /* POSIX timers */
 #if defined(SUNDIALS_HAVE_POSIX_TIMERS)
@@ -5755,10 +5757,10 @@ void SetTiming(int onoff, int myid)
 {
 #if defined(SUNDIALS_HAVE_POSIX_TIMERS) && defined(_POSIX_TIMERS)
   struct timespec spec;
-  clock_gettime(CLOCK_MONOTONIC_RAW, &spec);
+  clock_gettime(CLOCK_MONOTONIC, &spec);
   base_time_tv_sec = spec.tv_sec;
 
-  clock_getres(CLOCK_MONOTONIC_RAW, &spec);
+  clock_getres(CLOCK_MONOTONIC, &spec);
   if (myid == 0)
     printf("Timer resolution: %ld ns = %g s\n",
            spec.tv_nsec, ((double)(spec.tv_nsec) / 1E9));
@@ -5776,7 +5778,7 @@ static double get_time()
   double time;
 #if defined(SUNDIALS_HAVE_POSIX_TIMERS) && defined(_POSIX_TIMERS)
   struct timespec spec;
-  clock_gettime(CLOCK_MONOTONIC_RAW, &spec);
+  clock_gettime(CLOCK_MONOTONIC, &spec);
   time = (double)(spec.tv_sec - base_time_tv_sec) + ((double)(spec.tv_nsec) / 1E9);
 #else
   time = 0;

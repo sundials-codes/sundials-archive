@@ -7,7 +7,7 @@
  *                   @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -204,6 +204,10 @@ N_Vector N_VNewEmpty_Pthreads(sunindextype length, int num_threads,
   v->ops->nvbufsize   = N_VBufSize_Pthreads;
   v->ops->nvbufpack   = N_VBufPack_Pthreads;
   v->ops->nvbufunpack = N_VBufUnpack_Pthreads;
+
+  /* debugging functions */
+  v->ops->nvprint     = N_VPrint_Pthreads;
+  v->ops->nvprintfile = N_VPrintFile_Pthreads;
 
   /* Create content */
   content = NULL;

@@ -7,7 +7,7 @@
  *                   @ LLNL
  * -----------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -136,6 +136,10 @@ N_Vector N_VNewEmpty_OpenMP(sunindextype length, int num_threads, SUNContext sun
   v->ops->nvbufsize   = N_VBufSize_OpenMP;
   v->ops->nvbufpack   = N_VBufPack_OpenMP;
   v->ops->nvbufunpack = N_VBufUnpack_OpenMP;
+
+  /* debugging functions */
+  v->ops->nvprint     = N_VPrint_OpenMP;
+  v->ops->nvprintfile = N_VPrintFile_OpenMP;
 
   /* Create content */
   content = NULL;
