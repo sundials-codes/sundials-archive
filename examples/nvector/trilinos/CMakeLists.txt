@@ -2,7 +2,7 @@
 # Programmer(s): Slaven Peles and Cody J. Balos @ LLNL
 # ---------------------------------------------------------------
 # SUNDIALS Copyright Start
-# Copyright (c) 2002-2021, Lawrence Livermore National Security
+# Copyright (c) 2002-2022, Lawrence Livermore National Security
 # and Southern Methodist University.
 # All rights reserved.
 #
@@ -34,12 +34,10 @@ if(Trilinos_MPI)
   set(nvector_examples_dependencies
     test_nvector
     test_mpinvector
-    sundials_nvector
     )
 else()
   set(nvector_examples_dependencies
     test_nvector
-    sundials_nvector
     )
 endif()
 
@@ -118,7 +116,6 @@ foreach(example_tuple ${nvector_trilinos_examples})
       ../test_nvector.c
       ../test_mpinvector.c
       ../test_nvector.h
-      ../../../src/sundials/sundials_nvector.c
       DESTINATION ${EXAMPLES_INSTALL_PATH}/nvector/trilinos)
   endif()
 

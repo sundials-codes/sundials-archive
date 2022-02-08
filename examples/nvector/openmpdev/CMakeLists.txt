@@ -2,7 +2,7 @@
 # Programmer(s): David J. Gardner and Shelby Lockhart @ LLNL
 # ---------------------------------------------------------------
 # SUNDIALS Copyright Start
-# Copyright (c) 2002-2021, Lawrence Livermore National Security
+# Copyright (c) 2002-2022, Lawrence Livermore National Security
 # and Southern Methodist University.
 # All rights reserved.
 #
@@ -26,7 +26,6 @@ set(nvector_openmpdev_examples
 # Dependencies for nvector examples
 set(nvector_examples_dependencies
   test_nvector
-  sundials_nvector
   )
 
 # Add source directory to include directories
@@ -82,7 +81,6 @@ foreach(example_tuple ${nvector_openmpdev_examples})
     install(FILES ${example}.c
       ../test_nvector.c
       ../test_nvector.h
-      ../../../src/sundials/sundials_nvector.c
       DESTINATION ${EXAMPLES_INSTALL_PATH}/nvector/openmpdev)
   endif()
 

@@ -3,7 +3,7 @@
  *                Daniel R. Reynolds @ SMU
  * -----------------------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -260,8 +260,9 @@ int mriStep_RKCoeffs(MRIStepCoupling MRIC, int is, int *stage_map,
   ===============================================================*/
 
 /* Initialization and I/O error messages */
-#define MSG_MRISTEP_NO_MEM    "Time step module memory is NULL."
-#define MSG_NLS_INIT_FAIL     "The nonlinear solver's init routine failed."
+#define MSG_MRISTEP_NO_MEM "Time step module memory is NULL."
+#define MSG_NLS_INIT_FAIL "The nonlinear solver's init routine failed."
+#define MSG_MRISTEP_NO_COUPLING "The MRIStepCoupling is NULL."
 
 #ifdef __cplusplus
 }

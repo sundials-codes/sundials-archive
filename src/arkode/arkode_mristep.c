@@ -4,7 +4,7 @@
  *                Rujeko Chinomona @ SMU
  * -----------------------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -802,7 +802,6 @@ void MRIStepPrintMem(void* arkode_mem, FILE* outfile)
       fprintf(outfile,"MRIStep: Fsi[%i]:\n", i);
       N_VPrintFile(step_mem->Fsi[i], outfile);
     }
-  }
 #endif
 
   /* print the inner stepper memory */

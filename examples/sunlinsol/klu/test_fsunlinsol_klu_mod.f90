@@ -2,7 +2,7 @@
 ! Programmer(s): Cody J. Balos @ LLNL
 ! -----------------------------------------------------------------
 ! SUNDIALS Copyright Start
-! Copyright (c) 2002-2021, Lawrence Livermore National Security
+! Copyright (c) 2002-2022, Lawrence Livermore National Security
 ! and Southern Methodist University.
 ! All rights reserved.
 !
@@ -40,7 +40,7 @@ contains
     type(SUNLinearSolver), pointer :: LS                ! test linear solver
     type(SUNMatrix),       pointer :: A, D              ! test matrices
     type(N_Vector),        pointer :: x, b              ! test vectors
-    real(C_DOUBLE),        pointer :: colj(:), colIj(:) ! matrix column data
+    real(C_DOUBLE),        pointer :: colj(:)           ! matrix column data
     real(C_DOUBLE),        pointer :: xdata(:)          ! x vector data
     real(C_DOUBLE)                 :: tmpr              ! temporary real value
     integer(C_LONG)                :: j, k, i

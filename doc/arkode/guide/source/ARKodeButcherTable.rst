@@ -2,7 +2,7 @@
    Programmer(s): David J. Gardner @ LLNL
    ----------------------------------------------------------------
    SUNDIALS Copyright Start
-   Copyright (c) 2002-2021, Lawrence Livermore National Security
+   Copyright (c) 2002-2022, Lawrence Livermore National Security
    and Southern Methodist University.
    All rights reserved.
 
@@ -164,6 +164,10 @@ ARKodeButcherTable functions
    **Notes:**
       If the method does not have an embedding then *d* should be
       ``NULL`` and *p* should be equal to zero.
+
+      .. warning::
+         When calling this function from Fortran, it is important to note that ``A`` is expected
+         to be in row-major ordering.
 
 .. c:function:: ARKodeButcherTable ARKodeButcherTable_Copy(ARKodeButcherTable B)
 

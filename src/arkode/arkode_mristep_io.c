@@ -3,7 +3,7 @@
  *                Daniel R. Reynolds @ SMU
  * -----------------------------------------------------------------------------
  * SUNDIALS Copyright Start
- * Copyright (c) 2002-2021, Lawrence Livermore National Security
+ * Copyright (c) 2002-2022, Lawrence Livermore National Security
  * and Southern Methodist University.
  * All rights reserved.
  *
@@ -302,7 +302,7 @@ int MRIStepSetCoupling(void *arkode_mem, MRIStepCoupling MRIC)
   /* check for illegal inputs */
   if (MRIC == NULL) {
     arkProcessError(ark_mem, ARK_MEM_NULL, "ARKode::MRIStep",
-                    "MRIStepSetCoupling", MSG_ARK_NO_MEM);
+                    "MRIStepSetCoupling", MSG_MRISTEP_NO_COUPLING);
     return(ARK_ILL_INPUT);
   }
 
@@ -325,7 +325,7 @@ int MRIStepSetCoupling(void *arkode_mem, MRIStepCoupling MRIC)
   step_mem->MRIC = MRIStepCoupling_Copy(MRIC);
   if (step_mem->MRIC == NULL) {
     arkProcessError(ark_mem, ARK_MEM_NULL, "ARKode::MRIStep",
-                    "MRIStepSetCoupling", MSG_ARK_NO_MEM);
+                    "MRIStepSetCoupling", MSG_MRISTEP_NO_COUPLING);
     return(ARK_MEM_NULL);
   }
   MRIStepCoupling_Space(step_mem->MRIC, &Tliw, &Tlrw);

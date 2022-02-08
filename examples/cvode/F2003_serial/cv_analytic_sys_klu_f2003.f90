@@ -2,7 +2,7 @@
 ! Programmer(s): Cody J. Balos @ LLNL
 ! ------------------------------------------------------------------
 ! SUNDIALS Copyright Start
-! Copyright (c) 2002-2021, Lawrence Livermore National Security
+! Copyright (c) 2002-2022, Lawrence Livermore National Security
 ! and Southern Methodist University.
 ! All rights reserved.
 !
@@ -213,9 +213,7 @@ program main
   type(SUNMatrix),       pointer :: sunmat_A      ! sundials matrix
   type(SUNLinearSolver), pointer :: sunlinsol_LS  ! sundials linear solver
 
-  type(c_ptr) :: ctx           ! SUNDIALS simulation context
   type(c_ptr) :: cvode_mem     ! CVODE memory
-  type(c_ptr) :: cptr          ! c_ptr type variable for moving data
 
   ! solution vector, neq is set in the ode_mod module
   real(c_double) :: yvec(neq)
